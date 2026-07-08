@@ -1,0 +1,251 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────── Auth.js ───────────────────────────
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  name          String?
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime     @default(now())
+  accounts      Account[]
+  sessions      Session[]
+  memberships   Membership[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─────────────────────────── Core domain ───────────────────────────
+
+enum Plan {
+  FREE
+  SOLO
+  TEAM
+}
+
+enum MembershipRole {
+  OWNER
+  MEMBER
+}
+
+enum SourceType {
+  CSV
+  PLAID
+  EMAIL
+}
+
+enum SourceStatus {
+  ACTIVE
+  SYNCING
+  ERROR
+  DISCONNECTED
+}
+
+enum Cadence {
+  MONTHLY
+  ANNUAL
+  QUARTERLY
+  WEEKLY
+  IRREGULAR
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  FLAGGED
+  CANCELED
+  IGNORED
+}
+
+enum FlagType {
+  DUPLICATE
+  OVERLAP
+  ZOMBIE
+  PRICE_HIKE
+  TRIAL_CONVERTED
+  FORGOTTEN_ANNUAL
+}
+
+enum FlagSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum FlagStatus {
+  OPEN
+  DISMISSED
+  RESOLVED
+}
+
+model Organization {
+  id                   String            @id @default(cuid())
+  name                 String
+  plan                 Plan              @default(FREE)
+  stripeCustomerId     String?           @unique
+  stripeSubscriptionId String?           @unique
+  createdAt            DateTime          @default(now())
+  memberships          Membership[]
+  sources              ConnectedSource[]
+  transactions         Transaction[]
+  subscriptions        Subscription[]
+  auditReports         AuditReport[]
+}
+
+model Membership {
+  id        String         @id @default(cuid())
+  userId    String
+  orgId     String
+  role      MembershipRole @default(MEMBER)
+  createdAt DateTime       @default(now())
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org       Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+  @@index([orgId])
+}
+
+model ConnectedSource {
+  id           String        @id @default(cuid())
+  orgId        String
+  type         SourceType
+  label        String
+  plaidItemId  String?       @unique
+  // AES-256-GCM encrypted at rest — never stored or logged in plaintext (Phase 9)
+  plaidAccessToken String?   @db.Text
+  status       SourceStatus  @default(ACTIVE)
+  lastSyncedAt DateTime?
+  createdAt    DateTime      @default(now())
+  org          Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([orgId])
+}
+
+model Transaction {
+  id                 String              @id @default(cuid())
+  orgId              String
+  sourceId           String
+  date               DateTime            @db.Date
+  amountCents        Int
+  currency           String              @default("USD")
+  rawDescription     String
+  normalizedMerchant String
+  category           String?
+  // sha256(orgId + date + amount + rawDescription) — idempotent re-uploads
+  hash               String
+  createdAt          DateTime            @default(now())
+  org                Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  source             ConnectedSource     @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  subscriptionCharges SubscriptionCharge[]
+
+  @@unique([orgId, hash])
+  @@index([orgId, date])
+  @@index([orgId, normalizedMerchant])
+}
+
+model Subscription {
+  id                 String               @id @default(cuid())
+  orgId              String
+  merchantName       String
+  logoDomain         String?
+  cadence            Cadence
+  currentAmountCents Int
+  currency           String               @default("USD")
+  firstSeen          DateTime             @db.Date
+  lastSeen           DateTime             @db.Date
+  status             SubscriptionStatus   @default(ACTIVE)
+  category           String?
+  confidence         Float
+  // Set when the user confirms "we use this" in the review flow
+  confirmedInUseAt   DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  org                Organization         @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  charges            SubscriptionCharge[]
+  flags              Flag[]
+
+  @@unique([orgId, merchantName, cadence, currentAmountCents])
+  @@index([orgId, status])
+}
+
+model SubscriptionCharge {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  transactionId  String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  transaction    Transaction  @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, transactionId])
+  @@index([transactionId])
+}
+
+model Flag {
+  id                          String       @id @default(cuid())
+  subscriptionId              String
+  type                        FlagType
+  severity                    FlagSeverity @default(MEDIUM)
+  explanation                 String
+  estimatedAnnualSavingsCents Int          @default(0)
+  status                      FlagStatus   @default(OPEN)
+  // Stable key for diffing engine output against stored flags,
+  // so dismissed/resolved flags are never resurrected on re-import.
+  dedupeKey                   String
+  createdAt                   DateTime     @default(now())
+  updatedAt                   DateTime     @updatedAt
+  subscription                Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, dedupeKey])
+  @@index([subscriptionId, status])
+}
+
+model AuditReport {
+  id                       String       @id @default(cuid())
+  orgId                    String
+  createdAt                DateTime     @default(now())
+  totalMonthlySpendCents   Int
+  totalFlaggedSavingsCents Int
+  snapshot                 Json
+  org                      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+}
