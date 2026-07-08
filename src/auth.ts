@@ -10,12 +10,19 @@ const providers: Provider[] = [
   Resend({
     apiKey: process.env.RESEND_API_KEY,
     from: process.env.EMAIL_FROM ?? 'Zombly <auth@zombly.com>',
-    // No Resend key (local dev): print the magic link to the server
-    // console instead of sending an email.
+    // No Resend key: in local dev, print the magic link to the console
+    // for convenience. In production a magic link is a session-granting
+    // secret — printing it to logs would be an auth-bypass, so fail
+    // closed instead (better a broken sign-in than a silent hole).
     ...(process.env.RESEND_API_KEY
       ? {}
       : {
           async sendVerificationRequest({ identifier, url }) {
+            if (process.env.NODE_ENV === 'production') {
+              throw new Error(
+                'Email sign-in is not configured: set RESEND_API_KEY.',
+              )
+            }
             console.log(`\n[zombly] Magic link for ${identifier}:\n${url}\n`)
           },
         }),

@@ -1,3 +1,4 @@
+import { categoryNoun } from '../category-label'
 import { formatMoney } from '../money'
 import { annualizedCents, monthlyizedCents } from './recurrence'
 import type {
@@ -142,7 +143,7 @@ function findOverlaps(
           subscriptionKey: target.key,
           type: 'OVERLAP',
           severity: severityFromAnnual(savings),
-          explanation: `You're paying for both ${keeper.merchant} (${priceTag(keeper)}) and ${target.merchant} (${priceTag(target)}) — that's two ${categoryLabel(a.category)} tools doing one job. Pick one and save ~${formatMoney(savings)}/yr.`,
+          explanation: `You're paying for both ${keeper.merchant} (${priceTag(keeper)}) and ${target.merchant} (${priceTag(target)}) — that's two ${categoryNoun(a.category)} doing one job. Pick one and save ~${formatMoney(savings)}/yr.`,
           estimatedAnnualSavingsCents: savings,
           dedupeKey: `OVERLAP:${keeper.merchant}`,
         })
@@ -150,10 +151,6 @@ function findOverlaps(
     }
   }
   return flags
-}
-
-function categoryLabel(category: DetectedSubscription['category']): string {
-  return (category ?? 'similar').replace(/-/g, ' ')
 }
 
 // ── ZOMBIE: months of quiet billing, never confirmed in review ──

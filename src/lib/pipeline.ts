@@ -168,10 +168,12 @@ export async function runPipelineForOrg(
     .filter((f) => !detectedFlagKeys.has(`${f.subscriptionId}|${f.dedupeKey}`))
     .map((f) => f.id)
   if (staleIds.length > 0) {
-    await prisma.flag.updateMany({
-      where: { id: { in: staleIds } },
-      data: { status: 'DISMISSED' },
-    })
+    // DELETE, not mark DISMISSED: these are engine-suppressed flags the
+    // user never touched. DISMISSED is reserved for the user's own "we
+    // use it" decision, and the reconcile loop treats it as final — so
+    // tombstoning here would permanently hide a flag that later
+    // legitimately reappears (e.g. a paused zombie that resumes billing).
+    await prisma.flag.deleteMany({ where: { id: { in: staleIds } } })
   }
 
   // ── Roll statuses + report ──
@@ -190,6 +192,23 @@ export async function runPipelineForOrg(
     where: { id: { in: reconciledIds.filter((id) => !flaggedSubIds.has(id)) }, status: 'FLAGGED' },
     data: { status: 'ACTIVE' },
   })
+
+  // Retire ghosts: an existing subscription the engine produced NOTHING
+  // for this run is stale — its charges were re-attributed to a different
+  // detected subscription (e.g. a >30% price hike merged its clusters
+  // under a new key). Without this it lingers ACTIVE forever, double-
+  // counting the merchant on the dashboard and in the digest. User-set
+  // CANCELED/IGNORED states are left alone.
+  const reconciledIdSet = new Set(reconciledIds)
+  const orphanIds = existingSubs
+    .filter((s) => !reconciledIdSet.has(s.id) && (s.status === 'ACTIVE' || s.status === 'FLAGGED'))
+    .map((s) => s.id)
+  if (orphanIds.length > 0) {
+    await prisma.subscription.updateMany({
+      where: { id: { in: orphanIds } },
+      data: { status: 'CANCELED' },
+    })
+  }
 
   const activeDetected = detection.subscriptions.filter((s) => s.active)
   const totalMonthlySpendCents = activeDetected.reduce(

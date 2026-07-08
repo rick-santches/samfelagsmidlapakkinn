@@ -8,15 +8,26 @@ import { runPipelineForOrg } from '@/lib/pipeline'
 import { canAddSource, planSpec } from '@/lib/plans'
 import { ColumnMappingSchema, parseStatementRows } from '@/lib/sources/csv'
 
+// Keep only string cells. papaparse adds a `__parsed_extra: string[]`
+// field on rows with more columns than headers (a single unquoted comma
+// in a description does it), which would otherwise fail validation and
+// reject the entire upload. We only read the mapped columns anyway.
+const RowSchema = z
+  .record(z.string(), z.unknown())
+  .transform((row) => {
+    const clean: Record<string, string> = {}
+    for (const [key, value] of Object.entries(row)) {
+      if (typeof value === 'string') clean[key] = value
+    }
+    return clean
+  })
+
 const BodySchema = z.object({
   label: z.string().min(1).max(80),
   mapping: ColumnMappingSchema,
   // Rows as parsed by the browser (papaparse header mode). The server
   // re-validates and re-parses every row — the client is a preview.
-  rows: z
-    .array(z.record(z.string(), z.string().nullable().optional()))
-    .min(1)
-    .max(20_000),
+  rows: z.array(RowSchema).min(1).max(20_000),
 })
 
 export async function POST(request: Request): Promise<NextResponse> {

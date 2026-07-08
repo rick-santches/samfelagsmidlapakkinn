@@ -7,6 +7,20 @@ import { formatMoney } from './money'
 
 const APP_URL = () => process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
+/**
+ * Escape any dynamic value before it goes into email HTML. Merchant
+ * names and flag explanations are derived from raw bank descriptors, so
+ * a descriptor containing markup would otherwise inject into the email.
+ */
+function esc(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function layout(bodyHtml: string, cta: { label: string; path: string }): string {
   return `<!doctype html>
 <html>
@@ -50,8 +64,8 @@ export function instantFlagEmail(input: {
   ].join('\n')
 
   const html = layout(
-    `<h1 style="font-size:20px;margin:0 0 12px;">${subject}</h1>
-     <p style="font-size:15px;line-height:1.6;margin:0;">${input.explanation}</p>
+    `<h1 style="font-size:20px;margin:0 0 12px;">${esc(subject)}</h1>
+     <p style="font-size:15px;line-height:1.6;margin:0;">${esc(input.explanation)}</p>
      <p style="font-size:15px;margin:16px 0 0;">That's up to <strong style="color:#4d7c0f;">${formatMoney(input.estimatedAnnualSavingsCents)}/yr</strong> if you act on it.</p>`,
     { label: 'Decide in review', path: '/dashboard/review' },
   )
@@ -87,7 +101,7 @@ export function weeklyDigestEmail(data: DigestData): RenderedEmail {
     )
     htmlSections.push(
       `<h2 style="font-size:15px;margin:20px 0 8px;">New flags</h2>` +
-        list(data.newFlags.map((f) => `<strong>${f.merchantName}</strong> (${f.typeLabel}) — ~${formatMoney(f.savingsCents)}/yr`)),
+        list(data.newFlags.map((f) => `<strong>${esc(f.merchantName)}</strong> (${esc(f.typeLabel)}) — ~${formatMoney(f.savingsCents)}/yr`)),
     )
   }
   if (data.upcomingRenewals.length > 0) {
@@ -98,7 +112,7 @@ export function weeklyDigestEmail(data: DigestData): RenderedEmail {
     )
     htmlSections.push(
       `<h2 style="font-size:15px;margin:20px 0 8px;">Renewals in the next 14 days</h2>` +
-        list(data.upcomingRenewals.map((r) => `<strong>${r.merchantName}</strong>: ${formatMoney(r.amountCents)} in ${r.inDays} day${r.inDays === 1 ? '' : 's'}`)),
+        list(data.upcomingRenewals.map((r) => `<strong>${esc(r.merchantName)}</strong>: ${formatMoney(r.amountCents)} in ${r.inDays} day${r.inDays === 1 ? '' : 's'}`)),
     )
   }
   if (data.newSubscriptions.length > 0) {
@@ -109,7 +123,7 @@ export function weeklyDigestEmail(data: DigestData): RenderedEmail {
     )
     htmlSections.push(
       `<h2 style="font-size:15px;margin:20px 0 8px;">New subscriptions detected</h2>` +
-        list(data.newSubscriptions.map((s) => `<strong>${s.merchantName}</strong> (${s.amountLabel})`)),
+        list(data.newSubscriptions.map((s) => `<strong>${esc(s.merchantName)}</strong> (${esc(s.amountLabel)})`)),
     )
   }
 
@@ -128,7 +142,7 @@ export function weeklyDigestEmail(data: DigestData): RenderedEmail {
   ].join('\n')
 
   const html = layout(
-    `<h1 style="font-size:20px;margin:0 0 4px;">Weekly audit — ${data.orgName}</h1>
+    `<h1 style="font-size:20px;margin:0 0 4px;">Weekly audit — ${esc(data.orgName)}</h1>
      <p style="font-size:14px;color:#5b6b82;margin:0;">Open flags are worth ~<strong style="color:#4d7c0f;">${formatMoney(data.totalFlaggedSavingsCents)}/yr</strong>.</p>
      ${htmlSections.join('')}`,
     { label: 'Open review', path: '/dashboard/review' },

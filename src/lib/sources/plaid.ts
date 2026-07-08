@@ -50,8 +50,11 @@ export async function syncPlaidSource(sourceId: string): Promise<PlaidSyncResult
 
   const accessToken = decryptSecret(source.plaidAccessToken)
   let cursor = source.plaidCursor ?? undefined
-  const collected: PlaidTransaction[] = []
-  const removed: RemovedTransaction[] = []
+  // added + modified both need to land in the DB as the current version;
+  // modified must REPLACE its prior row (bank revised amount/date/desc),
+  // so we key on Plaid's transaction_id, not on our content hash.
+  const upserted: PlaidTransaction[] = []
+  const removedIds: string[] = []
 
   let hasMore = true
   while (hasMore) {
@@ -60,32 +63,55 @@ export async function syncPlaidSource(sourceId: string): Promise<PlaidSyncResult
       cursor,
       count: 500,
     })
-    collected.push(...response.data.added, ...response.data.modified)
-    removed.push(...response.data.removed)
+    upserted.push(...response.data.added, ...response.data.modified)
+    removedIds.push(...response.data.removed.map((r: RemovedTransaction) => r.transaction_id ?? ''))
     cursor = response.data.next_cursor
     hasMore = response.data.has_more
   }
 
-  const normalized = collected
-    .map(plaidToNormalized)
-    .filter((tx): tx is NormalizedTransaction => tx !== null)
-
-  const inserted = await prisma.transaction.createMany({
-    data: normalized.map((tx) => {
-      const norm = normalizeMerchant(tx.rawDescription)
+  const rows = upserted
+    .map((tx) => {
+      const normalized = plaidToNormalized(tx)
+      if (!normalized) return null
+      const norm = normalizeMerchant(normalized.rawDescription)
       return {
         orgId: source.orgId,
         sourceId: source.id,
-        date: tx.date,
-        amountCents: tx.amountCents,
-        currency: tx.currency,
-        rawDescription: tx.rawDescription,
+        date: normalized.date,
+        amountCents: normalized.amountCents,
+        currency: normalized.currency,
+        rawDescription: normalized.rawDescription,
         normalizedMerchant: norm.merchant,
         category: norm.category ?? null,
-        hash: transactionHash(source.orgId, tx.date, tx.amountCents, tx.rawDescription),
+        hash: transactionHash(
+          source.orgId,
+          normalized.date,
+          normalized.amountCents,
+          normalized.rawDescription,
+        ),
+        plaidTransactionId: tx.transaction_id,
       }
-    }),
-    skipDuplicates: true,
+    })
+    .filter((row): row is NonNullable<typeof row> => row !== null)
+
+  // Every transaction_id we touched this sync: clear any prior version
+  // (handles "modified") plus the explicitly "removed" ones, then insert
+  // the current versions. Atomic so a partial sync can't drop rows.
+  const touchedIds = [...rows.map((r) => r.plaidTransactionId), ...removedIds].filter(
+    (id): id is string => id.length > 0,
+  )
+
+  const inserted = await prisma.$transaction(async (tx) => {
+    if (touchedIds.length > 0) {
+      await tx.transaction.deleteMany({
+        where: { orgId: source.orgId, plaidTransactionId: { in: touchedIds } },
+      })
+    }
+    const result =
+      rows.length > 0
+        ? await tx.transaction.createMany({ data: rows, skipDuplicates: true })
+        : { count: 0 }
+    return result
   })
 
   await prisma.connectedSource.update({
@@ -93,5 +119,5 @@ export async function syncPlaidSource(sourceId: string): Promise<PlaidSyncResult
     data: { plaidCursor: cursor ?? null, lastSyncedAt: new Date(), status: 'ACTIVE' },
   })
 
-  return { added: inserted.count, fetched: normalized.length }
+  return { added: inserted.count, fetched: rows.length }
 }

@@ -69,6 +69,23 @@ export function orgDb(orgId: string) {
                 : { ...(a.data ?? {}), orgId }
               return query({ ...a, data } as never)
             }
+            // Singular writes take a unique `where` (usually just an id).
+            // Scope them too, so a caller passing a foreign id can never
+            // mutate/delete another org's row — the whole point of orgDb.
+            case 'update':
+            case 'delete':
+              return query(injectOrgId(args as OrgScopedArgs, orgId))
+            case 'upsert': {
+              const a = (args ?? {}) as OrgScopedArgs & {
+                create?: Record<string, unknown>
+                update?: Record<string, unknown>
+              }
+              return query({
+                ...a,
+                where: { ...(a.where ?? {}), orgId },
+                create: { ...(a.create ?? {}), orgId },
+              } as never)
+            }
             default:
               return query(args)
           }

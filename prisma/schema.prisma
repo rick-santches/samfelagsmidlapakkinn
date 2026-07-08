@@ -178,12 +178,16 @@ model Transaction {
   category           String?
   // sha256(orgId + date + amount + rawDescription) — idempotent re-uploads
   hash               String
+  // Plaid's stable transaction_id (null for CSV rows) — lets a later sync
+  // update a "modified" charge or delete a "removed" one in place.
+  plaidTransactionId String?
   createdAt          DateTime            @default(now())
   org                Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
   source             ConnectedSource     @relation(fields: [sourceId], references: [id], onDelete: Cascade)
   subscriptionCharges SubscriptionCharge[]
 
   @@unique([orgId, hash])
+  @@unique([orgId, plaidTransactionId])
   @@index([orgId, date])
   @@index([orgId, normalizedMerchant])
 }
