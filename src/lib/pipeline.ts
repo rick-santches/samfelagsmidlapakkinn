@@ -55,6 +55,7 @@ export async function runPipelineForOrg(
   // ── Reconcile subscriptions ──
   const detectedKeyToDbId = new Map<string, string>()
   const claimedDbIds = new Set<string>()
+  const chargeLinks: Array<{ subscriptionId: string; transactionId: string }> = []
 
   for (const det of detection.subscriptions) {
     const match = existingSubs
@@ -96,22 +97,40 @@ export async function runPipelineForOrg(
     detectedKeyToDbId.set(det.key, dbId)
     claimedDbIds.add(dbId)
 
-    await prisma.subscriptionCharge.deleteMany({ where: { subscriptionId: dbId } })
-    await prisma.subscriptionCharge.createMany({
-      data: det.charges.map((c) => ({ subscriptionId: dbId, transactionId: c.id })),
-      skipDuplicates: true,
+    for (const charge of det.charges) {
+      chargeLinks.push({ subscriptionId: dbId, transactionId: charge.id })
+    }
+  }
+
+  // Rewrite charge links in two statements rather than 2×N: clear every
+  // reconciled subscription's links, then insert them all at once.
+  const reconciledSubIds = [...detectedKeyToDbId.values()]
+  if (reconciledSubIds.length > 0) {
+    await prisma.subscriptionCharge.deleteMany({
+      where: { subscriptionId: { in: reconciledSubIds } },
     })
+  }
+  if (chargeLinks.length > 0) {
+    await prisma.subscriptionCharge.createMany({ data: chargeLinks, skipDuplicates: true })
   }
 
   // ── Reconcile flags ──
+  // Pre-fetch every existing flag for the reconciled subscriptions in one
+  // query, so the loop is a Map lookup instead of a findUnique per flag.
+  const existingFlags = await prisma.flag.findMany({
+    where: { subscriptionId: { in: reconciledSubIds } },
+    select: { id: true, subscriptionId: true, dedupeKey: true, status: true },
+  })
+  const flagByKey = new Map(
+    existingFlags.map((f) => [`${f.subscriptionId}|${f.dedupeKey}`, f]),
+  )
+
   const createdFlags: Array<Flag & { merchantName: string }> = []
   for (const flag of detection.flags) {
     const subscriptionId = detectedKeyToDbId.get(flag.subscriptionKey)
     if (!subscriptionId) continue
 
-    const existing = await prisma.flag.findUnique({
-      where: { subscriptionId_dedupeKey: { subscriptionId, dedupeKey: flag.dedupeKey } },
-    })
+    const existing = flagByKey.get(`${subscriptionId}|${flag.dedupeKey}`)
     if (existing) {
       if (existing.status === 'OPEN') {
         await prisma.flag.update({

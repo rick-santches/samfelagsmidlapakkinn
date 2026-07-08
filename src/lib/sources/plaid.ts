@@ -17,7 +17,9 @@ import type { NormalizedTransaction } from './types'
 export function plaidToNormalized(tx: PlaidTransaction): NormalizedTransaction | null {
   if (tx.pending) return null
   const amountCents = Math.round(tx.amount * 100)
-  if (!Number.isFinite(amountCents) || amountCents === 0) return null
+  // Keep $0 rows (trial/card-verification charges) — detection excludes
+  // them from spend/clustering but the trial detector reads them.
+  if (!Number.isFinite(amountCents)) return null
   const rawDescription = (tx.merchant_name || tx.name || 'UNKNOWN').slice(0, 300)
   return {
     date: new Date(`${tx.date}T00:00:00Z`),

@@ -183,10 +183,13 @@ export function parseStatementRows(
     }
 
     const cents = parseAmountToCents(rawAmount)
-    if (cents === null || cents === 0) {
+    if (cents === null) {
       errors.push({ row: index + 1, reason: `unparseable amount "${rawAmount}"` })
       return
     }
+    // $0 rows are kept (real trial/verification lines) — they carry no
+    // spend and never form a subscription, but the trial detector reads
+    // them. parseAmountToCents already rejected non-numeric junk as null.
 
     const amountCents =
       mapping.amountConvention === 'NEGATIVE_IS_CHARGE' ? -cents : cents

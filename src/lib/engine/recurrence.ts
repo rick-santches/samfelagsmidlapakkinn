@@ -229,10 +229,32 @@ export function detectRecurrences(
     string,
     { charges: EngineTransaction[]; domain?: string; category?: DetectedSubscription['category']; commonlyForgotten: boolean }
   >()
+  // All non-negative charges per merchant, incl. $0/$1 trial rows that are
+  // excluded from clustering below — the trial detector needs to see them.
+  const allCharges = new Map<string, EngineTransaction[]>()
+
+  // Recurring charges share identical descriptors, so normalizing each
+  // raw string once per run (instead of per transaction) collapses a
+  // ~300-entry dictionary scan from O(transactions) to O(distinct merchants).
+  const normCache = new Map<string, ReturnType<typeof normalizeMerchant>>()
+  const normalizeCached = (raw: string): ReturnType<typeof normalizeMerchant> => {
+    const hit = normCache.get(raw)
+    if (hit) return hit
+    const norm = normalizeMerchant(raw)
+    normCache.set(raw, norm)
+    return norm
+  }
 
   for (const tx of transactions) {
+    if (tx.amountCents < 0) continue
+    const norm = normalizeCached(tx.rawDescription)
+    const all = allCharges.get(norm.merchant)
+    if (all) all.push(tx)
+    else allCharges.set(norm.merchant, [tx])
+
+    // $0 rows are real (trial/verification lines) but carry no spend, so
+    // they never seed a subscription — clustering stays on positive charges.
     if (tx.amountCents <= 0) continue
-    const norm = normalizeMerchant(tx.rawDescription)
     const group = byMerchant.get(norm.merchant)
     if (group) {
       group.charges.push(tx)
@@ -250,9 +272,13 @@ export function detectRecurrences(
   const merchantCharges = new Map<string, EngineTransaction[]>()
 
   for (const [merchant, group] of byMerchant) {
+    // Include $0/$1 trial rows (from allCharges), not just the clustered
+    // positive charges, so findTrialConversions can spot a trial precursor.
     merchantCharges.set(
       merchant,
-      [...group.charges].sort((a, b) => a.date.getTime() - b.date.getTime()),
+      [...(allCharges.get(merchant) ?? group.charges)].sort(
+        (a, b) => a.date.getTime() - b.date.getTime(),
+      ),
     )
 
     const meta = {

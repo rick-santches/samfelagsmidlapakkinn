@@ -147,6 +147,25 @@ describe('TRIAL_CONVERTED', () => {
     expect(trials[0]!.explanation).toContain('HubSpot')
   })
 
+  it('fires for a genuine $0.00 trial that converts to real billing', () => {
+    // The product promises "$0/$1 charge" detection — $0 must work, not
+    // just $1. $0 rows are kept through ingestion and reach this detector.
+    const flags = flagsOf(
+      [tx(130, 0, 'NOTION LABS, INC.'), ...[116, 86, 56, 26].map((d) => tx(d, 3000, 'NOTION LABS, INC.'))],
+      ['Notion'],
+    )
+    const trials = flags.filter((f) => f.type === 'TRIAL_CONVERTED')
+    expect(trials).toHaveLength(1)
+    expect(trials[0]!.explanation).toContain('Notion')
+    // and the $0 row never becomes its own subscription
+    expect(
+      runDetection(
+        [tx(130, 0, 'NOTION LABS, INC.'), ...[116, 86, 56, 26].map((d) => tx(d, 3000, 'NOTION LABS, INC.'))],
+        { now: NOW, confirmedMerchants: new Set(['Notion']) },
+      ).subscriptions.filter((s) => s.currentAmountCents === 0),
+    ).toHaveLength(0)
+  })
+
   it('ignores trial charges more than 60 days before the subscription', () => {
     const flags = flagsOf(
       [tx(300, 100, 'HUBSPOT INC.'), ...[116, 86, 56, 26].map((d) => tx(d, 4500, 'HUBSPOT INC.'))],
