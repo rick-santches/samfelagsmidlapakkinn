@@ -65,7 +65,12 @@ export default async function SubscriptionsPage() {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <MerchantLogo domain={sub.logoDomain} name={sub.merchantName} size={24} />
-                    <span className="font-medium">{sub.merchantName}</span>
+                    <Link
+                      href={`/dashboard/subscriptions/${sub.id}`}
+                      className="font-medium hover:text-savings hover:underline"
+                    >
+                      {sub.merchantName}
+                    </Link>
                     {sub.flags.length > 0 && (
                       <span className="rounded-full bg-flame/15 px-2 py-0.5 text-xs font-medium text-flame">
                         {sub.flags.length} flag{sub.flags.length > 1 ? 's' : ''}
