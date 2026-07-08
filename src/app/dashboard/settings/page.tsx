@@ -1,8 +1,10 @@
 import type { Plan } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { formatMoneyWhole } from '@/lib/money'
 import { PLANS } from '@/lib/plans'
 import { requireOrg } from '@/lib/session'
 import { stripeConfigured } from '@/lib/stripe'
+import { updateAlertPrefs } from './actions'
 
 export default async function SettingsPage({
   searchParams,
@@ -11,6 +13,9 @@ export default async function SettingsPage({
 }) {
   const { org, role, user } = await requireOrg()
   const billingEnabled = stripeConfigured()
+  const membership = await prisma.membership.findFirst({
+    where: { userId: user.id, orgId: org.id },
+  })
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -116,8 +121,51 @@ export default async function SettingsPage({
         </div>
       </section>
 
+      <section className="mt-8 rounded-xl border border-ink-800 bg-ink-900 p-6">
+        <h2 className="text-sm font-semibold text-ink-200">Email alerts</h2>
+        <p className="mt-1 text-xs text-ink-400">
+          Paid plans only — the zombies don&apos;t announce themselves.
+        </p>
+        <form action={updateAlertPrefs} className="mt-4 space-y-3 text-sm">
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              name="instant"
+              defaultChecked={membership?.emailInstantAlerts ?? true}
+              className="h-4 w-4 accent-savings"
+            />
+            <span>
+              Instant alerts
+              <span className="block text-xs text-ink-400">
+                Price hikes and trial conversions, the moment they&apos;re detected
+              </span>
+            </span>
+          </label>
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              name="digest"
+              defaultChecked={membership?.emailWeeklyDigest ?? true}
+              className="h-4 w-4 accent-savings"
+            />
+            <span>
+              Weekly digest
+              <span className="block text-xs text-ink-400">
+                New subscriptions, upcoming renewals, fresh flags — every Monday
+              </span>
+            </span>
+          </label>
+          <button
+            type="submit"
+            className="rounded-lg border border-ink-700 px-4 py-2 text-sm font-semibold text-ink-200 transition hover:border-ink-500"
+          >
+            Save preferences
+          </button>
+        </form>
+      </section>
+
       <p className="mt-8 text-sm text-ink-500">
-        Team members and email alert preferences land in Phase 8.
+        Team member invites land with Plaid in a later phase.
       </p>
     </div>
   )

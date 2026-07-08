@@ -104,6 +104,20 @@ describe('PRICE_HIKE', () => {
     expect(hikes[0]!.dedupeKey).toBe('PRICE_HIKE:5499:5999')
   })
 
+  it('fires even when the hike exceeds the 15% cluster band', () => {
+    // $25 → $29 (+16%): sequential clusters must merge into one subscription
+    const charges = [
+      ...[14, 44].map((d) => tx(d, 2900, 'PAGERDUTY INC SAN FRANCISCO')),
+      ...[74, 104, 134, 164, 194, 224, 254, 284].map((d) => tx(d, 2500, 'PAGERDUTY INC SAN FRANCISCO')),
+    ]
+    const flags = flagsOf(charges, ['PagerDuty'])
+    const hikes = flags.filter((f) => f.type === 'PRICE_HIKE')
+    expect(hikes).toHaveLength(1)
+    expect(hikes[0]!.dedupeKey).toBe('PRICE_HIKE:2500:2900')
+    // and it must NOT be misread as a duplicate plan
+    expect(flags.filter((f) => f.type === 'DUPLICATE')).toHaveLength(0)
+  })
+
   it('never fires for variable usage billing (AWS-style)', () => {
     const amounts = [21000, 27500, 24100, 29800, 22400, 30000, 25900, 21500, 28700, 23300, 26800, 29100]
     const charges = amounts.map((amt, i) => tx(10 + i * 30, amt, 'AMAZON WEB SERVICES AWS.AMAZON.CO'))

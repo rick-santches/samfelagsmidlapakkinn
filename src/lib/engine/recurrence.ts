@@ -175,6 +175,39 @@ function buildSubscription(
   }
 }
 
+function mergeSequentialClusters(
+  found: DetectedSubscription[],
+  merchant: string,
+  now: Date,
+  meta: { domain?: string; category?: DetectedSubscription['category']; commonlyForgotten: boolean },
+): void {
+  let merged = true
+  while (merged && found.length > 1) {
+    merged = false
+    found.sort((a, b) => a.firstSeen.getTime() - b.firstSeen.getTime())
+    for (let i = 0; i < found.length - 1; i++) {
+      const a = found[i]
+      const b = found[i + 1]
+      if (!a || !b || a.cadence !== b.cadence || a.cadence === 'IRREGULAR') continue
+      // b must start after a ended, within ~1.5 billing periods
+      const gapDays = daysBetween(a.lastSeen, b.firstSeen)
+      const sequential = b.firstSeen > a.lastSeen
+      if (!sequential || gapDays > CADENCE_DAYS[a.cadence] * 1.6) continue
+      const combined = buildSubscription(
+        merchant,
+        [...a.charges, ...b.charges],
+        now,
+        meta,
+        `${a.key.split('|')[2] ?? ''}+${b.key.split('|')[2] ?? ''}`,
+      )
+      if (!combined || combined.cadence !== a.cadence) continue
+      found.splice(i, 2, combined)
+      merged = true
+      break
+    }
+  }
+}
+
 export interface RecurrenceResult {
   subscriptions: DetectedSubscription[]
   /** All positive charges grouped by normalized merchant (for trial detection). */
@@ -242,6 +275,13 @@ export function detectRecurrences(
       )
       if (sub) found.push(sub)
     }
+
+    // A price hike bigger than the ±15% cluster band splits one
+    // subscription into two sequential clusters ($25/mo then $29/mo).
+    // Sequential-in-time clusters with the same cadence are one
+    // subscription that changed price; genuinely parallel plans
+    // (duplicate Dropbox) interleave and never merge here.
+    mergeSequentialClusters(found, merchant, now, meta)
 
     // Usage-billed services (AWS) recur on a clean schedule with wildly
     // varying amounts, which fragments the clusters into phantom

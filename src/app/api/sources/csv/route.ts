@@ -100,7 +100,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     await prisma.connectedSource.delete({ where: { id: source.id } })
   }
 
-  const pipeline = await runPipelineForOrg(orgId)
+  const pipeline = await runPipelineForOrg(orgId, new Date(), { sendAlerts: true })
 
   return NextResponse.json({
     sourceId: source.id,

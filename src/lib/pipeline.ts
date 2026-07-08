@@ -1,4 +1,5 @@
-import type { FlagSeverity, FlagType, Prisma } from '@prisma/client'
+import type { Flag, FlagSeverity, FlagType, Prisma } from '@prisma/client'
+import { sendInstantFlagAlerts } from './alerts'
 import { orgDb, prisma } from './db'
 import { monthlyizedCents, runDetection } from './engine'
 import type { DetectedSubscription } from './engine'
@@ -23,9 +24,15 @@ export interface PipelineResult {
  *  - flags are diffed by (subscriptionId, dedupeKey): DISMISSED/RESOLVED
  *    flags are never resurrected, OPEN flags get refreshed copy
  */
+export interface PipelineOptions {
+  /** Send instant PRICE_HIKE/TRIAL_CONVERTED emails for newly created flags. */
+  sendAlerts?: boolean
+}
+
 export async function runPipelineForOrg(
   orgId: string,
   now: Date = new Date(),
+  options: PipelineOptions = {},
 ): Promise<PipelineResult> {
   const db = orgDb(orgId)
 
@@ -97,6 +104,7 @@ export async function runPipelineForOrg(
   }
 
   // ── Reconcile flags ──
+  const createdFlags: Array<Flag & { merchantName: string }> = []
   for (const flag of detection.flags) {
     const subscriptionId = detectedKeyToDbId.get(flag.subscriptionKey)
     if (!subscriptionId) continue
@@ -117,7 +125,7 @@ export async function runPipelineForOrg(
       }
       // DISMISSED / RESOLVED: the user has spoken — leave it alone.
     } else {
-      await prisma.flag.create({
+      const created = await prisma.flag.create({
         data: {
           subscriptionId,
           type: flag.type as FlagType,
@@ -126,7 +134,18 @@ export async function runPipelineForOrg(
           estimatedAnnualSavingsCents: flag.estimatedAnnualSavingsCents,
           dedupeKey: flag.dedupeKey,
         },
+        include: { subscription: { select: { merchantName: true } } },
       })
+      createdFlags.push({ ...created, merchantName: created.subscription.merchantName })
+    }
+  }
+
+  if (options.sendAlerts && createdFlags.length > 0) {
+    // Alert failures must never fail an import.
+    try {
+      await sendInstantFlagAlerts(orgId, createdFlags)
+    } catch (error) {
+      console.error('[zombly] instant alert send failed', error)
     }
   }
 
