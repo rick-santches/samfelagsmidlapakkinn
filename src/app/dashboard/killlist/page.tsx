@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { CountUp } from '@/components/count-up'
 import { MerchantLogo } from '@/components/merchant-logo'
+import { Paywall } from '@/components/paywall'
 import { cancellationInfo } from '@/lib/cancellation'
 import { prisma } from '@/lib/db'
 import { formatMoney } from '@/lib/money'
+import { planSpec } from '@/lib/plans'
 import { requireOrg } from '@/lib/session'
 import { ExportButtons } from './export-buttons'
 
@@ -24,6 +26,22 @@ const DIFFICULTY_STYLE: Record<string, string> = {
 
 export default async function KillListPage() {
   const { org } = await requireOrg()
+
+  if (!planSpec(org.plan).flagsUnlocked) {
+    const [openFlagCount, report] = await Promise.all([
+      prisma.flag.count({ where: { status: 'OPEN', subscription: { orgId: org.id } } }),
+      prisma.auditReport.findFirst({
+        where: { orgId: org.id },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
+    return (
+      <Paywall
+        flaggedSavingsCents={report?.totalFlaggedSavingsCents ?? 0}
+        openFlagCount={openFlagCount}
+      />
+    )
+  }
 
   const kills = await prisma.flag.findMany({
     where: { status: 'RESOLVED', subscription: { orgId: org.id } },

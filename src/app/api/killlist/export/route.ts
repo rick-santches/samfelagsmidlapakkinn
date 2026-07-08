@@ -3,6 +3,7 @@ import { auth } from '@/auth'
 import { cancellationInfo } from '@/lib/cancellation'
 import { prisma } from '@/lib/db'
 import { formatMoney } from '@/lib/money'
+import { planSpec } from '@/lib/plans'
 
 function csvEscape(value: string): string {
   return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
@@ -16,10 +17,17 @@ export async function GET(): Promise<NextResponse> {
   }
   const membership = await prisma.membership.findFirst({
     where: { userId },
+    include: { org: true },
     orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
   })
   if (!membership) {
     return NextResponse.json({ error: 'No organization' }, { status: 403 })
+  }
+  if (!planSpec(membership.org.plan).flagsUnlocked) {
+    return NextResponse.json(
+      { error: 'The Kill List export is part of the paid plans.' },
+      { status: 402 },
+    )
   }
 
   const kills = await prisma.flag.findMany({

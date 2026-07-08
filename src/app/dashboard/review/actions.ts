@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { runPipelineForOrg } from '@/lib/pipeline'
+import { planSpec } from '@/lib/plans'
 import { requireOrg } from '@/lib/session'
 
 const CADENCE_DAYS: Record<string, number> = {
@@ -13,9 +14,10 @@ const CADENCE_DAYS: Record<string, number> = {
   IRREGULAR: 30,
 }
 
-/** Load a flag and prove it belongs to the caller's org. */
+/** Load a flag and prove it belongs to the caller's org (and paid plan). */
 async function ownedFlag(flagId: string) {
   const { org } = await requireOrg()
+  if (!planSpec(org.plan).flagsUnlocked) throw new Error('Flags are locked on this plan')
   const flag = await prisma.flag.findFirst({
     where: { id: flagId, subscription: { orgId: org.id } },
     include: { subscription: true },

@@ -1,10 +1,28 @@
 import Link from 'next/link'
+import { Paywall } from '@/components/paywall'
 import { prisma } from '@/lib/db'
+import { planSpec } from '@/lib/plans'
 import { requireOrg } from '@/lib/session'
 import { ReviewDeck } from './review-deck'
 
 export default async function ReviewPage() {
   const { org } = await requireOrg()
+
+  if (!planSpec(org.plan).flagsUnlocked) {
+    const [openFlagCount, report] = await Promise.all([
+      prisma.flag.count({ where: { status: 'OPEN', subscription: { orgId: org.id } } }),
+      prisma.auditReport.findFirst({
+        where: { orgId: org.id },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
+    return (
+      <Paywall
+        flaggedSavingsCents={report?.totalFlaggedSavingsCents ?? 0}
+        openFlagCount={openFlagCount}
+      />
+    )
+  }
 
   const flags = await prisma.flag.findMany({
     where: {

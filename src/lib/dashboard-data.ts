@@ -1,4 +1,6 @@
+import type { Plan } from '@prisma/client'
 import { orgDb, prisma } from './db'
+import { planSpec } from './plans'
 
 export interface MonthlySpendPoint {
   /** "2026-03" */
@@ -21,6 +23,8 @@ export interface FlagPreview {
   estimatedAnnualSavingsCents: number
   merchantName: string
   logoDomain: string | null
+  /** True on the free plan: identity and explanation are withheld server-side. */
+  locked: boolean
 }
 
 export interface DashboardData {
@@ -36,8 +40,18 @@ export interface DashboardData {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-export async function getDashboardData(orgId: string): Promise<DashboardData> {
+const LOCKED_TEASERS: Record<string, string> = {
+  DUPLICATE: 'The same vendor is billing you twice. One plan can go.',
+  OVERLAP: 'Two tools quietly doing the same job. One of them can go.',
+  ZOMBIE: 'This one has been billing for months and nobody claimed it.',
+  PRICE_HIKE: 'A price crept up and kept charging like nothing happened.',
+  TRIAL_CONVERTED: 'A free trial that grew teeth. It bills every month now.',
+  FORGOTTEN_ANNUAL: 'An annual renewal is about to land. Decide before it does.',
+}
+
+export async function getDashboardData(orgId: string, plan: Plan = 'TEAM'): Promise<DashboardData> {
   const db = orgDb(orgId)
+  const unlocked = planSpec(plan).flagsUnlocked
 
   const [report, recurringCharges, openFlags, openFlagCount, activeSubscriptionCount] =
     await Promise.all([
@@ -88,14 +102,19 @@ export async function getDashboardData(orgId: string): Promise<DashboardData> {
     activeSubscriptionCount,
     spendSeries,
     categories: snapshot.topCategories ?? [],
+    // On the free plan the details never leave the server — a blur that
+    // ships real text in the DOM isn't a paywall.
     killListPreview: openFlags.map((flag) => ({
       id: flag.id,
       type: flag.type,
       severity: flag.severity,
-      explanation: flag.explanation,
+      explanation: unlocked
+        ? flag.explanation
+        : LOCKED_TEASERS[flag.type] ?? 'Something here deserves a second look.',
       estimatedAnnualSavingsCents: flag.estimatedAnnualSavingsCents,
-      merchantName: flag.subscription.merchantName,
-      logoDomain: flag.subscription.logoDomain,
+      merchantName: unlocked ? flag.subscription.merchantName : '████████',
+      logoDomain: unlocked ? flag.subscription.logoDomain : null,
+      locked: !unlocked,
     })),
     hasData: report !== null,
   }

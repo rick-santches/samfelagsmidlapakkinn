@@ -18,7 +18,8 @@ const FLAG_LABEL: Record<string, string> = {
 
 export default async function DashboardPage() {
   const { org } = await requireOrg()
-  const data = await getDashboardData(org.id)
+  const data = await getDashboardData(org.id, org.plan)
+  const locked = data.killListPreview.some((f) => f.locked)
 
   if (!data.hasData) {
     return (
@@ -111,10 +112,10 @@ export default async function DashboardPage() {
             Biggest money leaks
           </h2>
           <Link
-            href="/dashboard/review"
+            href={locked ? '/dashboard/settings#billing' : '/dashboard/review'}
             className="text-xs font-medium text-savings hover:underline"
           >
-            Review all {data.openFlagCount} →
+            {locked ? 'Unlock your Kill List →' : `Review all ${data.openFlagCount} →`}
           </Link>
         </div>
         {data.killListPreview.length === 0 ? (
@@ -129,9 +130,11 @@ export default async function DashboardPage() {
                 <div className="mt-0.5">
                   <MerchantLogo domain={flag.logoDomain} name={flag.merchantName} size={28} />
                 </div>
-                <div className="min-w-0 flex-1">
+                <div className={`min-w-0 flex-1 ${flag.locked ? 'select-none' : ''}`}>
                   <div className="flex items-center gap-2">
-                    <p className="font-medium">{flag.merchantName}</p>
+                    <p className={`font-medium ${flag.locked ? 'text-ink-500' : ''}`}>
+                      {flag.merchantName}
+                    </p>
                     <span className="rounded-full bg-flame/15 px-2 py-0.5 text-xs font-medium text-flame">
                       {FLAG_LABEL[flag.type] ?? flag.type}
                     </span>

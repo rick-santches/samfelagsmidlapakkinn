@@ -5,6 +5,7 @@ import { orgDb, prisma } from '@/lib/db'
 import { normalizeMerchant } from '@/lib/engine'
 import { transactionHash } from '@/lib/hash'
 import { runPipelineForOrg } from '@/lib/pipeline'
+import { canAddSource, planSpec } from '@/lib/plans'
 import { ColumnMappingSchema, parseStatementRows } from '@/lib/sources/csv'
 
 const BodySchema = z.object({
@@ -26,12 +27,24 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
   const membership = await prisma.membership.findFirst({
     where: { userId },
+    include: { org: true },
     orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
   })
   if (!membership) {
     return NextResponse.json({ error: 'No organization' }, { status: 403 })
   }
   const orgId = membership.orgId
+
+  // Plan limit, enforced where it counts — the server.
+  const sourceCount = await prisma.connectedSource.count({ where: { orgId } })
+  if (!canAddSource(membership.org.plan, sourceCount)) {
+    return NextResponse.json(
+      {
+        error: `The ${planSpec(membership.org.plan).name} plan includes ${planSpec(membership.org.plan).maxSources} source. Upgrade to Team for unlimited sources.`,
+      },
+      { status: 402 },
+    )
+  }
 
   let body: z.infer<typeof BodySchema>
   try {
