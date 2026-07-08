@@ -204,8 +204,8 @@ model Subscription {
   charges            SubscriptionCharge[]
   flags              Flag[]
 
-  @@unique([orgId, merchantName, cadence, currentAmountCents])
   @@index([orgId, status])
+  @@index([orgId, merchantName])
 }
 
 model SubscriptionCharge {
