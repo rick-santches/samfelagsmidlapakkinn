@@ -153,8 +153,10 @@ model ConnectedSource {
   type         SourceType
   label        String
   plaidItemId  String?       @unique
-  // AES-256-GCM encrypted at rest — never stored or logged in plaintext (Phase 9)
+  // AES-256-GCM encrypted at rest — never stored or logged in plaintext
   plaidAccessToken String?   @db.Text
+  // transactionsSync pagination cursor
+  plaidCursor  String?       @db.Text
   status       SourceStatus  @default(ACTIVE)
   lastSyncedAt DateTime?
   createdAt    DateTime      @default(now())
