@@ -130,6 +130,31 @@ export async function runPipelineForOrg(
     }
   }
 
+  // Stale cleanup: an OPEN flag the engine no longer produces (e.g. a
+  // zombie whose merchant was just confirmed in review) silently closes.
+  // User decisions (DISMISSED/RESOLVED) are never touched.
+  const detectedFlagKeys = new Set(
+    detection.flags
+      .map((f) => {
+        const subId = detectedKeyToDbId.get(f.subscriptionKey)
+        return subId ? `${subId}|${f.dedupeKey}` : null
+      })
+      .filter((k): k is string => k !== null),
+  )
+  const staleOpen = await prisma.flag.findMany({
+    where: { status: 'OPEN', subscription: { orgId } },
+    select: { id: true, subscriptionId: true, dedupeKey: true },
+  })
+  const staleIds = staleOpen
+    .filter((f) => !detectedFlagKeys.has(`${f.subscriptionId}|${f.dedupeKey}`))
+    .map((f) => f.id)
+  if (staleIds.length > 0) {
+    await prisma.flag.updateMany({
+      where: { id: { in: staleIds } },
+      data: { status: 'DISMISSED' },
+    })
+  }
+
   // ── Roll statuses + report ──
   const openFlags = await prisma.flag.findMany({
     where: { status: 'OPEN', subscription: { orgId } },

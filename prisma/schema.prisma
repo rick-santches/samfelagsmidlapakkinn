@@ -227,6 +227,8 @@ model Flag {
   explanation                 String
   estimatedAnnualSavingsCents Int          @default(0)
   status                      FlagStatus   @default(OPEN)
+  // "Remind me at renewal": hidden from the review queue until this date.
+  remindAt                    DateTime?
   // Stable key for diffing engine output against stored flags,
   // so dismissed/resolved flags are never resurrected on re-import.
   dedupeKey                   String
