@@ -1,6 +1,7 @@
 import Link from 'next/link'
+import { MerchantLogo } from '@/components/merchant-logo'
+import { categoryLabel } from '@/lib/category-label'
 import { orgDb } from '@/lib/db'
-import { logoUrl } from '@/lib/engine'
 import { formatMoney } from '@/lib/money'
 import { requireOrg } from '@/lib/session'
 
@@ -63,20 +64,7 @@ export default async function SubscriptionsPage() {
               <tr key={sub.id} className="border-t border-ink-800">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    {sub.logoDomain ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={logoUrl(sub.logoDomain)}
-                        alt=""
-                        width={24}
-                        height={24}
-                        className="h-6 w-6 rounded"
-                      />
-                    ) : (
-                      <div className="flex h-6 w-6 items-center justify-center rounded bg-ink-800 text-xs text-ink-400">
-                        {sub.merchantName.charAt(0)}
-                      </div>
-                    )}
+                    <MerchantLogo domain={sub.logoDomain} name={sub.merchantName} size={24} />
                     <span className="font-medium">{sub.merchantName}</span>
                     {sub.flags.length > 0 && (
                       <span className="rounded-full bg-flame/15 px-2 py-0.5 text-xs font-medium text-flame">
@@ -91,7 +79,9 @@ export default async function SubscriptionsPage() {
                     {CADENCE_LABEL[sub.cadence] ?? ''}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-ink-300">{sub.category ?? '—'}</td>
+                <td className="px-4 py-3 text-ink-300">
+                  {sub.category ? categoryLabel(sub.category) : '—'}
+                </td>
                 <td className="num px-4 py-3 text-ink-300">
                   {sub.lastSeen.toISOString().slice(0, 10)}
                 </td>
