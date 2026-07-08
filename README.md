@@ -18,9 +18,10 @@ React + Tailwind CSS**.
 2. **Contact email / footer** — update the email address and company
    details in the `Footer` component near the bottom of `src/App.jsx`.
 
-3. **OG image** *(optional but recommended)* — drop a `1200x630` image at
-   `public/og-image.png` so social shares get a preview image. The tag is
-   already wired up in `index.html`.
+3. **OG image** — a branded `1200x630` preview image ships at
+   `public/og-image.png` and is wired up in `index.html`, so social shares
+   get a preview out of the box. Replace the file if you want different
+   artwork (keep the same path and dimensions).
 
 4. **Domain / canonical URL** — update the `canonical`, `og:url`, and image
    URLs in `index.html` once you know the final domain.
