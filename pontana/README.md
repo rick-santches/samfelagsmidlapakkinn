@@ -43,11 +43,12 @@ Allt sýnilegt efni býr í **`lib/content.ts`**. Engin component-breyting þarf
 2. **Litir** — breyttu `colors`-hlutnum (grunnlitur, accent o.s.frv.). Litirnir
    flæða sjálfkrafa í gegnum allan Tailwind-stílinn sem CSS-breytur.
 3. **Myndir** — skiptu út `images.hero` / `images.about` / `images.ogImage`
-   URL-um (Unsplash eða eigin myndir; bættu léninu við `next.config.mjs`
-   `remotePatterns` ef það er nýtt).
+   og `gallery.images` URL-um (Unsplash eða eigin myndir; bættu léninu við
+   `next.config.mjs` `remotePatterns` ef það er nýtt).
 4. **Matseðill, umsagnir, opnunartímar** — uppfærðu `menu.categories`,
-   `reviews.items`, `hours.schedule`, heimilisfang, síma og netfang.
-   Uppfærðu líka `mapEmbedUrl` með heimilisfangi viðskiptavinarins.
+   `reviews.items`, `hours.schedule` (bæði sýnitextann og `dayNumbers` /
+   `open` / `close` sem stýra „Opið núna"-merkinu), heimilisfang, síma og
+   netfang. Uppfærðu líka `mapEmbedUrl` með heimilisfangi viðskiptavinarins.
 5. **Favicon & lén** — uppfærðu litina í `app/icon.svg` og settu rétt lén í
    `url` í `content.ts`. Búið!
 

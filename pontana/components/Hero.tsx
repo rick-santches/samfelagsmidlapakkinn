@@ -4,13 +4,30 @@ import { siteConfig } from '@/lib/content'
 
 /** Above-the-fold content uses the CSS-only .rise animation instead of
  *  <Reveal> — it must paint without waiting for hydration (LCP). */
-function Rise({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+function Rise({
+  children,
+  delay = 0,
+  moveOnly = false,
+}: {
+  children: React.ReactNode
+  delay?: number
+  /** Animate transform only — use for the LCP element so it paints at frame 0 */
+  moveOnly?: boolean
+}) {
   return (
-    <div className="rise" style={{ '--rise-delay': `${delay}ms` } as React.CSSProperties}>
+    <div
+      className={moveOnly ? 'rise-move' : 'rise'}
+      style={{ '--rise-delay': `${delay}ms` } as React.CSSProperties}
+    >
       {children}
     </div>
   )
 }
+
+// Solid brand-color blur placeholder so the hero never flashes white
+const blurPlaceholder = `data:image/svg+xml;base64,${Buffer.from(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'><rect width='8' height='8' fill='${siteConfig.colors.base}'/></svg>`
+).toString('base64')}`
 
 export default function Hero() {
   const { name, tagline, hero, images } = siteConfig
@@ -22,6 +39,8 @@ export default function Hero() {
         fill
         priority
         sizes="100vw"
+        placeholder="blur"
+        blurDataURL={blurPlaceholder}
         className="object-cover"
       />
       {/* Gradient scrim for text legibility */}
@@ -40,7 +59,7 @@ export default function Hero() {
             {hero.kicker}
           </p>
         </Rise>
-        <Rise delay={120}>
+        <Rise moveOnly>
           <h1 className="font-display text-5xl font-bold leading-tight sm:text-7xl lg:text-8xl">
             {name}
           </h1>

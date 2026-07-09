@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Playfair_Display, Inter } from 'next/font/google'
 import { siteConfig } from '@/lib/content'
 import './globals.css'
@@ -15,10 +15,16 @@ const body = Inter({
   display: 'swap',
 })
 
+// Mobile browser chrome matches the brand background color
+export const viewport: Viewport = {
+  themeColor: siteConfig.colors.base,
+}
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: `${siteConfig.name} — ${siteConfig.tagline}`,
   description: siteConfig.description,
+  alternates: { canonical: '/' },
   openGraph: {
     title: `${siteConfig.name} — ${siteConfig.tagline}`,
     description: siteConfig.description,
@@ -35,8 +41,21 @@ export const metadata: Metadata = {
   },
 }
 
+const SCHEMA_DAYS = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+]
+
 function LocalBusinessJsonLd() {
-  const { name, description, url, hours, contact, images } = siteConfig
+  const { name, description, url, hours, contact, images, reviews, hero } = siteConfig
+  const ratingCount = reviews.items.length
+  const ratingValue =
+    Math.round((reviews.items.reduce((sum, r) => sum + r.rating, 0) / ratingCount) * 10) / 10
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Restaurant',
@@ -48,6 +67,7 @@ function LocalBusinessJsonLd() {
     priceRange: 'kr kr',
     telephone: contact.phoneHref.replace('tel:', ''),
     email: contact.email,
+    acceptsReservations: `${url}${hero.ctaHref}`,
     address: {
       '@type': 'PostalAddress',
       streetAddress: hours.address.street,
@@ -59,6 +79,18 @@ function LocalBusinessJsonLd() {
       '@type': 'GeoCoordinates',
       latitude: 65.6826,
       longitude: -18.0907,
+    },
+    openingHoursSpecification: hours.schedule.map((s) => ({
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: s.dayNumbers.map((d) => SCHEMA_DAYS[d]),
+      opens: s.open,
+      closes: s.close,
+    })),
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue,
+      reviewCount: ratingCount,
+      bestRating: 5,
     },
   }
   return (

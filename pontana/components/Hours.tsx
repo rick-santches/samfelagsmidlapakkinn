@@ -1,4 +1,5 @@
 import { siteConfig } from '@/lib/content'
+import OpenBadge from './OpenBadge'
 import Reveal from './Reveal'
 import SectionHeading from './SectionHeading'
 
@@ -14,7 +15,10 @@ export default function Hours() {
           <Reveal>
             <div className="flex h-full flex-col justify-between gap-8 rounded-2xl border border-line bg-surface p-8">
               <div>
-                <h3 className="font-display text-xl font-bold text-accent">Opnunartímar</h3>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="font-display text-xl font-bold text-accent">Opnunartímar</h3>
+                  <OpenBadge />
+                </div>
                 <dl className="mt-5 space-y-3">
                   {hours.schedule.map((s) => (
                     <div

@@ -25,7 +25,14 @@ export default function Menu() {
                   {category.items.map((item) => (
                     <li key={item.name}>
                       <div className="flex items-baseline justify-between gap-3">
-                        <h4 className="font-display text-lg font-semibold">{item.name}</h4>
+                        <h4 className="flex items-baseline gap-2.5 font-display text-lg font-semibold">
+                          {item.name}
+                          {item.tag && (
+                            <span className="whitespace-nowrap rounded-full bg-accent-soft px-2.5 py-0.5 font-body text-[11px] font-semibold uppercase tracking-wide text-accent">
+                              {item.tag}
+                            </span>
+                          )}
+                        </h4>
                         <span
                           className="mx-1 hidden flex-1 border-b border-dotted border-line sm:block"
                           aria-hidden="true"

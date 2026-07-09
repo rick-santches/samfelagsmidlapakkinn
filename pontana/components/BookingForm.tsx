@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { siteConfig } from '@/lib/content'
 
 type Status = 'idle' | 'sending' | 'success' | 'error'
@@ -9,6 +9,12 @@ type Status = 'idle' | 'sending' | 'success' | 'error'
 export default function BookingForm() {
   const { booking } = siteConfig
   const [status, setStatus] = useState<Status>('idle')
+  // Set after mount to avoid an SSR/client hydration mismatch on the date
+  const [minDate, setMinDate] = useState<string>()
+
+  useEffect(() => {
+    setMinDate(new Date().toISOString().slice(0, 10))
+  }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -63,7 +69,14 @@ export default function BookingForm() {
           <label htmlFor="booking-date" className="field-label">
             {booking.form.dateLabel}
           </label>
-          <input id="booking-date" name="date" type="date" required className="field-input" />
+          <input
+            id="booking-date"
+            name="date"
+            type="date"
+            required
+            min={minDate}
+            className="field-input"
+          />
         </div>
         <div>
           <label htmlFor="booking-time" className="field-label">

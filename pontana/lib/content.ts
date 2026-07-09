@@ -13,6 +13,8 @@ export interface MenuItem {
   name: string
   description: string
   price: number // in ISK, formatted as "X.XXX kr." by the UI
+  /** Optional highlight chip, e.g. "Vinsælast" or "Nýtt" */
+  tag?: string
 }
 
 export interface MenuCategory {
@@ -28,8 +30,20 @@ export interface Review {
 }
 
 export interface OpeningHour {
+  /** Display label, e.g. "Mánudagur – Fimmtudagur" */
   days: string
+  /** Display value, e.g. "11:30 – 21:00" */
   hours: string
+  /** Machine-readable weekdays: 0 = sunnudagur … 6 = laugardagur.
+   *  Drives the live "Opið núna" badge and JSON-LD opening hours. */
+  dayNumbers: number[]
+  open: string // "HH:MM"
+  close: string // "HH:MM"
+}
+
+export interface GalleryImage {
+  src: string
+  alt: string
 }
 
 export interface SiteConfig {
@@ -87,6 +101,12 @@ export interface SiteConfig {
     categories: MenuCategory[]
   }
 
+  gallery: {
+    heading: string
+    kicker: string
+    images: GalleryImage[]
+  }
+
   reviews: {
     heading: string
     kicker: string
@@ -99,6 +119,13 @@ export interface SiteConfig {
   hours: {
     heading: string
     kicker: string
+    /** Labels for the live open/closed badge */
+    badge: {
+      open: string // "Opið núna"
+      closed: string // "Lokað"
+      closesAt: string // "lokar kl."
+      opensAt: string // "opnar kl."
+    }
     schedule: OpeningHour[]
     address: {
       street: string
@@ -236,6 +263,7 @@ export const siteConfig: SiteConfig = {
             name: 'Bláskel úr Hrísey',
             description: 'Gufusoðin bláskel með hvítvíni, hvítlauk og steinselju',
             price: 3190,
+            tag: 'Nýtt',
           },
           {
             name: 'Humarsúpa',
@@ -251,6 +279,7 @@ export const siteConfig: SiteConfig = {
             name: 'Þorskur dagsins',
             description: 'Léttsteiktur þorskhnakki með brúnu smjöri, kartöflum og grænmeti',
             price: 4990,
+            tag: 'Vinsælast',
           },
           {
             name: 'Grillaður lax',
@@ -293,6 +322,29 @@ export const siteConfig: SiteConfig = {
             price: 2790,
           },
         ],
+      },
+    ],
+  },
+
+  gallery: {
+    heading: 'Svipmyndir',
+    kicker: 'Stemningin hjá okkur',
+    images: [
+      {
+        src: 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&w=800&q=75',
+        alt: 'Fallega framreiddur sjávarréttur á diski',
+      },
+      {
+        src: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=75',
+        alt: 'Laxaréttur með fersku grænmeti',
+      },
+      {
+        src: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=800&q=75',
+        alt: 'Hlýleg stemning í veitingasalnum',
+      },
+      {
+        src: 'https://images.unsplash.com/photo-1551218808-94e220e084d2?auto=format&fit=crop&w=800&q=75',
+        alt: 'Réttur kvöldsins framreiddur af kokki',
       },
     ],
   },
@@ -340,10 +392,34 @@ export const siteConfig: SiteConfig = {
   hours: {
     heading: 'Opnunartímar & staðsetning',
     kicker: 'Finndu okkur',
+    badge: {
+      open: 'Opið núna',
+      closed: 'Lokað',
+      closesAt: 'lokar kl.',
+      opensAt: 'opnar kl.',
+    },
     schedule: [
-      { days: 'Mánudagur – Fimmtudagur', hours: '11:30 – 21:00' },
-      { days: 'Föstudagur – Laugardagur', hours: '11:30 – 22:30' },
-      { days: 'Sunnudagur', hours: '12:00 – 21:00' },
+      {
+        days: 'Mánudagur – Fimmtudagur',
+        hours: '11:30 – 21:00',
+        dayNumbers: [1, 2, 3, 4],
+        open: '11:30',
+        close: '21:00',
+      },
+      {
+        days: 'Föstudagur – Laugardagur',
+        hours: '11:30 – 22:30',
+        dayNumbers: [5, 6],
+        open: '11:30',
+        close: '22:30',
+      },
+      {
+        days: 'Sunnudagur',
+        hours: '12:00 – 21:00',
+        dayNumbers: [0],
+        open: '12:00',
+        close: '21:00',
+      },
     ],
     address: {
       street: 'Strandgata 11',

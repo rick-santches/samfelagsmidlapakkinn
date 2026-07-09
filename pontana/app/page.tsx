@@ -2,6 +2,7 @@ import Nav from '@/components/Nav'
 import Hero from '@/components/Hero'
 import About from '@/components/About'
 import Menu from '@/components/Menu'
+import Gallery from '@/components/Gallery'
 import Reviews from '@/components/Reviews'
 import Hours from '@/components/Hours'
 import Contact from '@/components/Contact'
@@ -15,6 +16,7 @@ export default function HomePage() {
         <Hero />
         <About />
         <Menu />
+        <Gallery />
         <Reviews />
         <Hours />
         <Contact />
