@@ -82,9 +82,10 @@ never lets one org read, update, or delete another org's rows (see
 | `DATABASE_URL` | yes | Postgres connection string |
 | `AUTH_SECRET` | yes | Auth.js JWT + token-encryption key (`openssl rand -base64 32`) |
 | `NEXT_PUBLIC_APP_URL` | yes | Absolute app URL (links in emails, Stripe redirects) |
-| `RESEND_API_KEY` | no | Sends magic links + alerts; console fallback in dev |
+| `RESEND_API_KEY` | no | Sends magic links + alerts; console fallback in dev, disabled in prod if unset |
 | `EMAIL_FROM` | no | From header, e.g. `Zombly <auth@yourdomain.com>` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | no | Enables "Continue with Google" |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | no | Enables built-in owner email+password login (email-free way into any deploy) |
 | `STRIPE_SECRET_KEY` | no | Enables checkout + billing portal |
 | `STRIPE_WEBHOOK_SECRET` | no | Verifies `/api/webhooks/stripe` |
 | `PLAID_CLIENT_ID` / `PLAID_SECRET` / `PLAID_ENV` | no | Enables bank connections (Team plan) |

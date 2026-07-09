@@ -1,10 +1,12 @@
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import NextAuth from 'next-auth'
 import type { Provider } from 'next-auth/providers'
+import Credentials from 'next-auth/providers/credentials'
 import Google from 'next-auth/providers/google'
 import Resend from 'next-auth/providers/resend'
 import { authConfig } from './auth.config'
 import { prisma } from './lib/db'
+import { authenticateOwner, ownerLoginEnabled } from './lib/owner-login'
 
 const providers: Provider[] = [
   Resend({
@@ -35,6 +37,22 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       allowDangerousEmailAccountLinking: true,
+    }),
+  )
+}
+
+// Built-in owner login (ADMIN_EMAIL + ADMIN_PASSWORD): an email-free way
+// into any deploy, so a missing Resend/Google config is never a lockout.
+if (ownerLoginEnabled()) {
+  providers.push(
+    Credentials({
+      id: 'owner',
+      name: 'Owner login',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      authorize: (creds) => authenticateOwner(creds?.email, creds?.password),
     }),
   )
 }
