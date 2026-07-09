@@ -1,9 +1,11 @@
+import type { Prisma, SubscriptionStatus } from '@prisma/client'
 import Link from 'next/link'
 import { MerchantLogo } from '@/components/merchant-logo'
 import { categoryLabel } from '@/lib/category-label'
 import { orgDb } from '@/lib/db'
 import { formatMoney } from '@/lib/money'
 import { requireOrg } from '@/lib/session'
+import { SubscriptionFilters } from './filters'
 
 const CADENCE_LABEL: Record<string, string> = {
   MONTHLY: '/mo',
@@ -13,14 +15,55 @@ const CADENCE_LABEL: Record<string, string> = {
   IRREGULAR: '/mo avg',
 }
 
-export default async function SubscriptionsPage() {
-  const { org } = await requireOrg()
-  const subscriptions = await orgDb(org.id).subscription.findMany({
-    orderBy: { currentAmountCents: 'desc' },
-    include: { flags: { where: { status: 'OPEN' }, select: { id: true } } },
-  })
+const STATUS_VALUES: SubscriptionStatus[] = ['ACTIVE', 'FLAGGED', 'CANCELED', 'IGNORED']
 
-  if (subscriptions.length === 0) {
+const SORT_ORDER: Record<string, Prisma.SubscriptionOrderByWithRelationInput> = {
+  amount: { currentAmountCents: 'desc' },
+  name: { merchantName: 'asc' },
+  lastSeen: { lastSeen: 'desc' },
+  confidence: { confidence: 'desc' },
+}
+
+export default async function SubscriptionsPage({
+  searchParams,
+}: {
+  searchParams: { status?: string; category?: string; q?: string; sort?: string }
+}) {
+  const { org } = await requireOrg()
+  const db = orgDb(org.id)
+
+  const status = STATUS_VALUES.find((s) => s === searchParams.status)
+  const category = searchParams.category && searchParams.category !== 'ALL'
+    ? searchParams.category
+    : undefined
+  const q = searchParams.q?.trim()
+  const orderBy = SORT_ORDER[searchParams.sort ?? 'amount'] ?? SORT_ORDER.amount
+
+  const where: Prisma.SubscriptionWhereInput = {
+    ...(status ? { status } : {}),
+    ...(category ? { category } : {}),
+    ...(q ? { merchantName: { contains: q, mode: 'insensitive' } } : {}),
+  }
+
+  const [subscriptions, totalCount, categoryRows] = await Promise.all([
+    db.subscription.findMany({
+      where,
+      orderBy,
+      include: { flags: { where: { status: 'OPEN' }, select: { id: true } } },
+    }),
+    db.subscription.count(),
+    db.subscription.findMany({
+      where: { category: { not: null } },
+      distinct: ['category'],
+      select: { category: true },
+      orderBy: { category: 'asc' },
+    }),
+  ])
+  const categories = categoryRows
+    .map((r) => r.category)
+    .filter((c): c is string => c !== null)
+
+  if (totalCount === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center text-center">
         <h1 className="text-2xl font-bold">No subscriptions yet</h1>
@@ -40,13 +83,23 @@ export default async function SubscriptionsPage() {
 
   return (
     <div>
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-2xl font-bold">Subscriptions</h1>
-        <p className="text-sm text-ink-400">
-          {subscriptions.length} detected
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-2xl font-bold">Subscriptions</h1>
+          <p className="text-sm text-ink-400">
+            {subscriptions.length === totalCount
+              ? `${totalCount} detected`
+              : `${subscriptions.length} of ${totalCount}`}
+          </p>
+        </div>
+        <SubscriptionFilters categories={categories} />
       </div>
 
+      {subscriptions.length === 0 ? (
+        <p className="mt-10 text-center text-sm text-ink-400">
+          No subscriptions match these filters.
+        </p>
+      ) : (
       <div className="mt-6 overflow-x-auto rounded-xl border border-ink-800">
         <table className="w-full text-sm">
           <thead className="bg-ink-900 text-left text-ink-400">
@@ -101,6 +154,7 @@ export default async function SubscriptionsPage() {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   )
 }
