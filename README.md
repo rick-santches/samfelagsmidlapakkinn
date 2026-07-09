@@ -64,10 +64,16 @@ zombies, an Adobe price hike, a HubSpot trial conversion, and a Squarespace
 annual renewal ~3 weeks out).
 
 ```bash
-npm test          # engine + CSV + crypto suites (85 tests)
-npm run typecheck # tsc --noEmit, strict
-npm run build     # production build
+npm test              # engine + CSV + crypto + email suites (hermetic, no DB)
+npm run test:integration  # tenant-isolation checks against a live Postgres
+npm run typecheck     # tsc --noEmit, strict
+npm run build         # production build
 ```
+
+The integration suite proves the core multi-tenant invariant: `orgDb(orgId)`
+never lets one org read, update, or delete another org's rows (see
+`src/lib/db.ts`). It needs `DATABASE_URL` and is kept out of the default
+`npm test` so unit runs stay hermetic.
 
 ## Environment variables
 
