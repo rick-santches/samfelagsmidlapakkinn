@@ -1,4 +1,4 @@
-# Norðurströnd — demo-vefsíða (PONTANA)
+# Pontana — demo-vefsíða (PONTANA)
 
 Flaggskips-demo fyrir **„Local Business Starter"** pakkann frá Marinerus ehf:
 nútímalegt sjávarréttabistró á Akureyri, byggt til að sýna viðskiptavinum hvað
@@ -10,7 +10,7 @@ gagnagrunnur, ekkert CMS — allt efni í einni skrá.
 ## Keyra á eigin vél
 
 ```bash
-cd nordurstrond
+cd pontana
 npm install
 npm run dev
 ```
@@ -25,7 +25,7 @@ npm run build && npm start
 
 1. Ýttu repo-inu á GitHub.
 2. Farðu á [vercel.com/new](https://vercel.com/new) og fluttu inn repo-ið.
-3. Stilltu **Root Directory** á `nordurstrond` — Vercel finnur Next.js
+3. Stilltu **Root Directory** á `pontana` — Vercel finnur Next.js
    sjálfkrafa, engin önnur stilling nauðsynleg.
 4. (Valfrjálst) Bættu við env-breytum fyrir alvöru tölvupóst:
    - `RESEND_API_KEY` — API lykill frá [resend.com](https://resend.com)

@@ -159,11 +159,11 @@ export interface SiteConfig {
 }
 
 export const siteConfig: SiteConfig = {
-  name: 'Norðurströnd',
+  name: 'Pontana',
   tagline: 'Ferskt úr Eyjafirði — á hverjum degi',
   description:
-    'Norðurströnd er nútímalegt sjávarréttabistró á Akureyri. Ferskur fiskur úr Eyjafirði, hlý stemning og norðlensk gestrisni.',
-  url: 'https://nordurstrond.example.is',
+    'Pontana er nútímalegt sjávarréttabistró á Akureyri. Ferskur fiskur úr Eyjafirði, hlý stemning og norðlensk gestrisni.',
+  url: 'https://pontana.example.is',
 
   colors: {
     base: '#0b1220',
@@ -203,7 +203,7 @@ export const siteConfig: SiteConfig = {
     heading: 'Fjölskyldufyrirtæki við Eyjafjörð',
     kicker: 'Um okkur',
     paragraphs: [
-      'Norðurströnd er fjölskyldufyrirtæki við Eyjafjörð, stofnað árið 2014. Við trúum á einfalda hluti: ferskan fisk beint frá bryggjunni, hráefni úr héraði og hlýja norðlenska gestrisni.',
+      'Pontana er fjölskyldufyrirtæki við Eyjafjörð, stofnað árið 2014. Við trúum á einfalda hluti: ferskan fisk beint frá bryggjunni, hráefni úr héraði og hlýja norðlenska gestrisni.',
       'Kokkurinn okkar, Elvar, byrjar hvern morgun á spjalli við sjómennina á höfninni — og matseðillinn ræðst af því sem kom upp úr sjónum þá nótt. Þess vegna er hann aldrei alveg eins tvo daga í röð.',
       'Hvort sem þú kemur í hádeginu eftir gönguferð eða á kvöldin með fjölskyldunni, þá viljum við að þér líði eins og heima hjá þér — bara með betra útsýni yfir fjörðinn.',
     ],
@@ -353,7 +353,7 @@ export const siteConfig: SiteConfig = {
     },
     mapEmbedUrl:
       'https://www.google.com/maps?q=Strandgata%2011%2C%20600%20Akureyri%2C%20Iceland&output=embed',
-    mapLabel: 'Kort sem sýnir staðsetningu Norðurstrandar á Akureyri',
+    mapLabel: 'Kort sem sýnir staðsetningu Pontana á Akureyri',
   },
 
   contact: {
@@ -363,7 +363,7 @@ export const siteConfig: SiteConfig = {
       'Sendu okkur línu vegna hópbókana, veisluhalda eða bara til að segja hæ. Þú getur líka hringt beint.',
     phone: '462 7100',
     phoneHref: 'tel:+3544627100',
-    email: 'nordurstrond@nordurstrond.is',
+    email: 'pontana@pontana.is',
     form: {
       nameLabel: 'Nafn',
       emailLabel: 'Netfang',
