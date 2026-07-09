@@ -4,6 +4,11 @@ Single-page landing site for **Samfélagsmiðlapakkinn**, a 90-day Icelandic
 social media content pack for small local businesses. Built with **Vite +
 React + Tailwind CSS**.
 
+> **Demo site:** the [`pontana/`](pontana/) directory contains **Pontana**,
+> a standalone Next.js 14 demo restaurant site (flagship demo for the
+> "Local Business Starter" package). It has its own README with run,
+> deploy and re-skin instructions.
+
 ## Before you launch
 
 1. **Checkout link** — open `src/App.jsx` and replace the placeholder
