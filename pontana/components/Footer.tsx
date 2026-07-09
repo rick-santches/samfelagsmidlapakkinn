@@ -16,14 +16,14 @@ export default function Footer() {
               </a>
             </p>
           </div>
-          <ul className="flex items-center gap-5">
+          <ul className="flex items-center gap-2">
             {social.map((s) => (
               <li key={s.label}>
                 <a
                   href={s.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-ink-muted transition-colors hover:text-accent"
+                  className="inline-block p-3 text-sm text-ink-muted transition-colors hover:text-accent"
                 >
                   {s.label}
                 </a>

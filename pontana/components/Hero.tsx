@@ -1,7 +1,16 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { siteConfig } from '@/lib/content'
-import Reveal from './Reveal'
+
+/** Above-the-fold content uses the CSS-only .rise animation instead of
+ *  <Reveal> — it must paint without waiting for hydration (LCP). */
+function Rise({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  return (
+    <div className="rise" style={{ '--rise-delay': `${delay}ms` } as React.CSSProperties}>
+      {children}
+    </div>
+  )
+}
 
 export default function Hero() {
   const { name, tagline, hero, images } = siteConfig
@@ -26,20 +35,20 @@ export default function Hero() {
       />
 
       <div className="relative z-10 mx-auto max-w-content px-5 py-32 text-center sm:px-8">
-        <Reveal>
+        <Rise>
           <p className="mb-5 text-xs font-semibold uppercase tracking-[0.3em] text-accent sm:text-sm">
             {hero.kicker}
           </p>
-        </Reveal>
-        <Reveal delay={120}>
+        </Rise>
+        <Rise delay={120}>
           <h1 className="font-display text-5xl font-bold leading-tight sm:text-7xl lg:text-8xl">
             {name}
           </h1>
-        </Reveal>
-        <Reveal delay={240}>
+        </Rise>
+        <Rise delay={240}>
           <p className="mx-auto mt-6 max-w-xl text-lg text-ink/90 sm:text-xl">{tagline}</p>
-        </Reveal>
-        <Reveal delay={360}>
+        </Rise>
+        <Rise delay={360}>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link href={hero.ctaHref} className="btn-primary w-full sm:w-auto">
               {hero.cta}
@@ -48,7 +57,7 @@ export default function Hero() {
               {hero.secondaryCta}
             </Link>
           </div>
-        </Reveal>
+        </Rise>
       </div>
 
       {/* Scroll hint */}
