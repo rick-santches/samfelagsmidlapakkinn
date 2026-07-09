@@ -7,12 +7,13 @@ import Reviews from '@/components/Reviews'
 import Hours from '@/components/Hours'
 import Contact from '@/components/Contact'
 import Footer from '@/components/Footer'
+import StickyCta from '@/components/StickyCta'
 
 export default function HomePage() {
   return (
     <>
       <Nav />
-      <main>
+      <main id="efni">
         <Hero />
         <About />
         <Menu />
@@ -22,6 +23,7 @@ export default function HomePage() {
         <Contact />
       </main>
       <Footer />
+      <StickyCta />
     </>
   )
 }

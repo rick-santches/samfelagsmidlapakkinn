@@ -7,7 +7,7 @@ export default function NotFound() {
   return (
     <>
       <Nav />
-      <main className="flex min-h-[100svh] flex-col items-center justify-center px-5 text-center">
+      <main id="efni" className="flex min-h-[100svh] flex-col items-center justify-center px-5 text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.25em] text-accent">404</p>
         <h1 className="mt-4 font-display text-4xl font-bold sm:text-6xl">Síða fannst ekki</h1>
         <p className="mt-5 max-w-md text-ink-muted">

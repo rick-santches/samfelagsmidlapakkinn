@@ -11,12 +11,35 @@ import { siteConfig } from '@/lib/content'
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const [activeId, setActiveId] = useState<string | null>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Highlight the nav link of the section currently in the middle of the
+  // viewport (home page only — elsewhere the sections don't exist)
+  useEffect(() => {
+    const sections = siteConfig.nav
+      .map((item) => item.href.split('#')[1])
+      .filter(Boolean)
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null)
+    if (sections.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActiveId(entry.target.id)
+        }
+      },
+      { rootMargin: '-40% 0px -55% 0px' }
+    )
+    sections.forEach((el) => observer.observe(el))
+    return () => observer.disconnect()
   }, [])
 
   return (
@@ -41,15 +64,21 @@ export default function Nav() {
 
         {/* Desktop links */}
         <div className="hidden items-center gap-7 md:flex">
-          {siteConfig.nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-sm text-ink-muted transition-colors hover:text-ink"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {siteConfig.nav.map((item) => {
+            const isActive = activeId !== null && item.href.endsWith(`#${activeId}`)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive ? 'true' : undefined}
+                className={`text-sm transition-colors hover:text-ink ${
+                  isActive ? 'font-semibold text-accent' : 'text-ink-muted'
+                }`}
+              >
+                {item.label}
+              </Link>
+            )
+          })}
           <Link href={siteConfig.hero.ctaHref} className="btn-primary !px-5 !py-2.5">
             {siteConfig.hero.cta}
           </Link>

@@ -16,7 +16,7 @@ export default function BookingPage() {
   return (
     <>
       <Nav />
-      <main className="mx-auto max-w-content px-5 pb-24 pt-32 sm:px-8 sm:pt-40">
+      <main id="efni" className="mx-auto max-w-content px-5 pb-24 pt-32 sm:px-8 sm:pt-40">
         <div className="mx-auto max-w-xl">
           <Reveal>
             <p className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.25em] text-accent">

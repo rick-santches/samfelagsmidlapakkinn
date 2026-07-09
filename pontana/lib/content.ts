@@ -74,8 +74,10 @@ export interface SiteConfig {
   images: {
     hero: string
     about: string
-    ogImage: string
   }
+
+  /** Optional announcement pill in the hero — set to null to hide */
+  announcement: { text: string } | null
 
   nav: { label: string; href: string }[]
 
@@ -206,8 +208,10 @@ export const siteConfig: SiteConfig = {
     hero: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=2000&q=80',
     about:
       'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1200&q=80',
-    ogImage:
-      'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=80',
+  },
+
+  announcement: {
+    text: 'Sumartilboð — 3ja rétta matseðill á 8.900 kr. alla virka daga',
   },
 
   nav: [

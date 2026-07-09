@@ -42,7 +42,7 @@ Allt sýnilegt efni býr í **`lib/content.ts`**. Engin component-breyting þarf
    `description`, „Um okkur"-textanum og öllum labels.
 2. **Litir** — breyttu `colors`-hlutnum (grunnlitur, accent o.s.frv.). Litirnir
    flæða sjálfkrafa í gegnum allan Tailwind-stílinn sem CSS-breytur.
-3. **Myndir** — skiptu út `images.hero` / `images.about` / `images.ogImage`
+3. **Myndir** — skiptu út `images.hero` / `images.about`
    og `gallery.images` URL-um (Unsplash eða eigin myndir; bættu léninu við
    `next.config.mjs` `remotePatterns` ef það er nýtt).
 4. **Matseðill, umsagnir, opnunartímar** — uppfærðu `menu.categories`,

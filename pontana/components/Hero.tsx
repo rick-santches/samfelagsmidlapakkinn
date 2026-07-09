@@ -30,7 +30,7 @@ const blurPlaceholder = `data:image/svg+xml;base64,${Buffer.from(
 ).toString('base64')}`
 
 export default function Hero() {
-  const { name, tagline, hero, images } = siteConfig
+  const { name, tagline, hero, images, announcement } = siteConfig
   return (
     <section className="relative flex min-h-[100svh] items-center justify-center overflow-hidden">
       <Image
@@ -54,6 +54,14 @@ export default function Hero() {
       />
 
       <div className="relative z-10 mx-auto max-w-content px-5 py-32 text-center sm:px-8">
+        {announcement && (
+          <Rise>
+            <p className="mx-auto mb-8 inline-flex max-w-full items-center gap-2 rounded-full border border-accent/30 bg-accent-soft px-4 py-1.5 text-xs font-medium text-accent sm:text-sm">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden="true" />
+              {announcement.text}
+            </p>
+          </Rise>
+        )}
         <Rise>
           <p className="mb-5 text-xs font-semibold uppercase tracking-[0.3em] text-accent sm:text-sm">
             {hero.kicker}

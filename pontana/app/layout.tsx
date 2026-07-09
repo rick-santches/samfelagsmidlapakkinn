@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     locale: 'is_IS',
     type: 'website',
-    images: [{ url: siteConfig.images.ogImage, width: 1200, height: 630 }],
+    // og:image comes from the generated app/opengraph-image.tsx
   },
   twitter: {
     card: 'summary_large_image',
@@ -52,7 +52,7 @@ const SCHEMA_DAYS = [
 ]
 
 function LocalBusinessJsonLd() {
-  const { name, description, url, hours, contact, images, reviews, hero } = siteConfig
+  const { name, description, url, hours, contact, images, reviews, hero, menu } = siteConfig
   const ratingCount = reviews.items.length
   const ratingValue =
     Math.round((reviews.items.reduce((sum, r) => sum + r.rating, 0) / ratingCount) * 10) / 10
@@ -92,6 +92,24 @@ function LocalBusinessJsonLd() {
       reviewCount: ratingCount,
       bestRating: 5,
     },
+    hasMenu: {
+      '@type': 'Menu',
+      name: menu.heading,
+      hasMenuSection: menu.categories.map((category) => ({
+        '@type': 'MenuSection',
+        name: category.title,
+        hasMenuItem: category.items.map((item) => ({
+          '@type': 'MenuItem',
+          name: item.name,
+          description: item.description,
+          offers: {
+            '@type': 'Offer',
+            price: item.price,
+            priceCurrency: 'ISK',
+          },
+        })),
+      })),
+    },
   }
   return (
     <script
@@ -126,6 +144,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="is" className={`${display.variable} ${body.variable}`} style={colorVars}>
       <body>
+        <a
+          href="#efni"
+          className="sr-only rounded-full focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:bg-accent focus:px-5 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-[color:var(--color-base)]"
+        >
+          Beint í efni
+        </a>
         <LocalBusinessJsonLd />
         {children}
       </body>
