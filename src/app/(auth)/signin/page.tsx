@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { AuthError } from 'next-auth'
 import { auth, signIn } from '@/auth'
+import { ZomblyMark } from '@/components/zombly-mark'
 import { ownerLoginEnabled } from '@/lib/owner-login'
 
 async function signInWithEmail(formData: FormData): Promise<void> {
@@ -46,9 +47,12 @@ export default async function SignInPage({
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
       <div className="w-full max-w-sm">
-        <p className="mb-2 text-center text-sm font-medium uppercase tracking-widest text-savings">
-          Zombly
-        </p>
+        <div className="mb-3 flex items-center justify-center gap-2.5">
+          <ZomblyMark size={26} />
+          <p className="text-sm font-medium uppercase tracking-widest text-savings">
+            Zombly
+          </p>
+        </div>
         <h1 className="text-center text-2xl font-bold">
           Sign in to hunt zombies
         </h1>

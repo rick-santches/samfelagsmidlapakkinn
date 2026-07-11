@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ZomblyMark } from '@/components/zombly-mark'
 
 const STEPS = [
   {
@@ -25,9 +26,12 @@ export default function LandingPage() {
   return (
     <main className="mx-auto max-w-4xl px-6">
       <section className="flex min-h-[70vh] flex-col items-center justify-center pt-20 text-center">
-        <p className="mb-4 text-sm font-medium uppercase tracking-widest text-savings">
-          Zombly
-        </p>
+        <div className="mb-4 flex items-center gap-2.5">
+          <ZomblyMark size={26} />
+          <p className="text-sm font-medium uppercase tracking-widest text-savings">
+            Zombly
+          </p>
+        </div>
         <h1 className="max-w-2xl text-4xl font-bold tracking-tight sm:text-6xl">
           Kill your zombie subscriptions.
         </h1>

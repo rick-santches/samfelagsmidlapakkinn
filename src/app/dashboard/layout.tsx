@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { signOut } from '@/auth'
+import { ZomblyMark } from '@/components/zombly-mark'
 import { requireOrg } from '@/lib/session'
 
 const NAV = [
@@ -24,7 +25,11 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-56 shrink-0 flex-col border-r border-ink-800 bg-ink-900 px-4 py-6">
-        <Link href="/dashboard" className="px-2 text-lg font-bold tracking-tight">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2 px-2 text-lg font-bold tracking-tight"
+        >
+          <ZomblyMark size={22} />
           <span className="text-savings">Zombly</span>
         </Link>
         <p className="mt-1 truncate px-2 text-xs text-ink-400">{org.name}</p>
