@@ -26,9 +26,9 @@ export default function LandingPage() {
   return (
     <main className="mx-auto max-w-4xl px-6">
       <section className="flex min-h-[70vh] flex-col items-center justify-center pt-20 text-center">
-        <div className="mb-4 flex items-center gap-2.5">
-          <ZomblyMark size={26} />
-          <p className="text-sm font-medium uppercase tracking-widest text-savings">
+        <div className="mb-5 flex flex-col items-center gap-3">
+          <ZomblyMark size={76} />
+          <p className="text-base font-bold uppercase tracking-[0.25em] text-savings">
             Zombly
           </p>
         </div>
