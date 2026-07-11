@@ -123,6 +123,7 @@ model Organization {
   plan                 Plan              @default(FREE)
   stripeCustomerId     String?           @unique
   stripeSubscriptionId String?           @unique
+  paypalSubscriptionId String?           @unique
   createdAt            DateTime          @default(now())
   memberships          Membership[]
   sources              ConnectedSource[]
@@ -247,6 +248,14 @@ model Flag {
 
   @@unique([subscriptionId, dedupeKey])
   @@index([subscriptionId, status])
+}
+
+// Cache of PayPal billing-plan IDs we've created (one per plan+interval),
+// so checkout doesn't re-create catalog objects on every request.
+model PaypalPlan {
+  id           String @id @default(cuid())
+  planKey      String @unique // e.g. "SOLO:month"
+  paypalPlanId String
 }
 
 model AuditReport {

@@ -86,7 +86,10 @@ never lets one org read, update, or delete another org's rows (see
 | `EMAIL_FROM` | no | From header, e.g. `Zombly <auth@yourdomain.com>` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | no | Enables "Continue with Google" |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | no | Enables built-in owner email+password login (email-free way into any deploy) |
-| `STRIPE_SECRET_KEY` | no | Enables checkout + billing portal |
+| `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` | no | Enables PayPal subscription checkout (primary rail; works for Iceland) |
+| `PAYPAL_ENV` | no | `live` (default) or `sandbox` |
+| `PAYPAL_WEBHOOK_ID` | no | Verifies `/api/webhooks/paypal` (subscription lifecycle events) |
+| `STRIPE_SECRET_KEY` | no | Enables Stripe checkout + billing portal (alternative rail) |
 | `STRIPE_WEBHOOK_SECRET` | no | Verifies `/api/webhooks/stripe` |
 | `PLAID_CLIENT_ID` / `PLAID_SECRET` / `PLAID_ENV` | no | Enables bank connections (Team plan) |
 | `CRON_SECRET` | no | Bearer token for `/api/cron/weekly-digest` |
@@ -109,11 +112,23 @@ set instead of crashing.
 Access tokens are AES-256-GCM encrypted at rest (`src/lib/crypto.ts`);
 raw transaction descriptions are never logged.
 
-## Stripe
+## Payments — PayPal (primary) or Stripe
 
-Checkout uses inline `price_data`, so **no dashboard products are needed** —
-any Stripe account works immediately. Plans: Solo $19/mo, Team $49/mo,
-annual = 2 months free. For webhooks in dev:
+Two interchangeable billing rails feed the same plan-gating (Solo $19/mo,
+Team $49/mo, annual = 2 months free). Whichever is configured powers the
+checkout buttons; PayPal wins if both are set.
+
+**PayPal** (works for merchants in countries Stripe doesn't serve, incl.
+Iceland): create a Business app at <https://developer.paypal.com> → set
+`PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV` (`sandbox` to
+test, `live` for real money). Billing plans are created lazily via the
+API and cached in the DB — no dashboard product setup. For webhooks: add
+a webhook on the app pointing at `https://YOUR_URL/api/webhooks/paypal`
+subscribed to the `BILLING.SUBSCRIPTION.*` events, and put its ID in
+`PAYPAL_WEBHOOK_ID`. Cancellation is built into Settings.
+
+**Stripe** uses inline `price_data`, so **no dashboard products are
+needed** — any Stripe account works immediately. For webhooks in dev:
 
 ```bash
 stripe listen --forward-to localhost:3000/api/webhooks/stripe

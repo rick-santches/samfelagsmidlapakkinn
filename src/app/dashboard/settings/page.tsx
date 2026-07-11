@@ -1,6 +1,7 @@
 import type { Plan } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { formatMoneyWhole } from '@/lib/money'
+import { paypalConfigured } from '@/lib/paypal'
 import { PLANS } from '@/lib/plans'
 import { requireOrg } from '@/lib/session'
 import { stripeConfigured } from '@/lib/stripe'
@@ -12,7 +13,11 @@ export default async function SettingsPage({
   searchParams: { billing?: string }
 }) {
   const { org, role, user } = await requireOrg()
-  const billingEnabled = stripeConfigured()
+  // PayPal is the primary rail (works for Iceland-based merchants);
+  // Stripe stays available for deployments that configure it instead.
+  const paypal = paypalConfigured()
+  const billingEnabled = paypal || stripeConfigured()
+  const checkoutBase = paypal ? '/api/billing/paypal/checkout' : '/api/billing/checkout'
   const membership = await prisma.membership.findFirst({
     where: { userId: user.id, orgId: org.id },
   })
@@ -23,13 +28,23 @@ export default async function SettingsPage({
 
       {searchParams.billing === 'success' && (
         <div className="mt-4 rounded-lg border border-savings/40 bg-savings/10 px-4 py-3 text-sm text-savings">
-          Payment received — your plan updates as soon as Stripe confirms it
-          (usually seconds). Happy hunting.
+          Payment received — your plan is active. Happy hunting.
         </div>
       )}
       {searchParams.billing === 'canceled' && (
         <div className="mt-4 rounded-lg border border-ink-700 bg-ink-900 px-4 py-3 text-sm text-ink-300">
           Checkout canceled. The zombies remain… for now.
+        </div>
+      )}
+      {searchParams.billing === 'canceled_plan' && (
+        <div className="mt-4 rounded-lg border border-ink-700 bg-ink-900 px-4 py-3 text-sm text-ink-300">
+          Subscription canceled — you&apos;re back on the Free Audit plan.
+        </div>
+      )}
+      {searchParams.billing === 'error' && (
+        <div className="mt-4 rounded-lg border border-flame/40 bg-flame/10 px-4 py-3 text-sm text-flame">
+          Something went wrong talking to the payment provider. Nothing was
+          charged — try again in a minute.
         </div>
       )}
 
@@ -53,18 +68,30 @@ export default async function SettingsPage({
 
       <section id="billing" className="mt-6 scroll-mt-8">
         <h2 className="text-lg font-semibold">Billing</h2>
-        <p className="mt-1 text-sm text-ink-400">
-          Current plan:{' '}
-          <span className="font-semibold text-ink-100">{PLANS[org.plan].name}</span>
-          {org.plan !== 'FREE' && billingEnabled && org.stripeCustomerId && (
-            <>
-              {' · '}
-              <a href="/api/billing/portal" className="text-savings hover:underline">
-                Manage billing ↗
-              </a>
-            </>
+        <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-ink-400">
+          <p>
+            Current plan:{' '}
+            <span className="font-semibold text-ink-100">{PLANS[org.plan].name}</span>
+            {org.plan !== 'FREE' && !paypal && org.stripeCustomerId && (
+              <>
+                {' · '}
+                <a href="/api/billing/portal" className="text-savings hover:underline">
+                  Manage billing ↗
+                </a>
+              </>
+            )}
+          </p>
+          {org.plan !== 'FREE' && org.paypalSubscriptionId && (
+            <form action="/api/billing/paypal/cancel" method="post">
+              <button
+                type="submit"
+                className="rounded-md border border-ink-700 px-3 py-1 text-xs font-medium text-ink-300 transition hover:border-flame hover:text-flame"
+              >
+                Cancel subscription
+              </button>
+            </form>
           )}
-        </p>
+        </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {(Object.keys(PLANS) as Plan[]).map((plan) => {
@@ -93,26 +120,31 @@ export default async function SettingsPage({
                   </p>
                 ) : plan === 'FREE' ? (
                   <p className="mt-4 py-2 text-center text-xs text-ink-500">
-                    Downgrade via Manage billing
+                    Downgrade by canceling your subscription
                   </p>
                 ) : billingEnabled ? (
                   <div className="mt-4 space-y-2">
                     <a
-                      href={`/api/billing/checkout?plan=${plan}&interval=month`}
+                      href={`${checkoutBase}?plan=${plan}&interval=month`}
                       className="block rounded-lg bg-savings py-2 text-center text-sm font-semibold text-ink-950 transition hover:bg-savings-glow"
                     >
                       Go {spec.name} monthly
                     </a>
                     <a
-                      href={`/api/billing/checkout?plan=${plan}&interval=year`}
+                      href={`${checkoutBase}?plan=${plan}&interval=year`}
                       className="block rounded-lg border border-ink-700 py-2 text-center text-xs font-medium text-ink-200 transition hover:border-ink-500"
                     >
                       Annual {formatMoneyWhole(spec.annualCents)} — 2 months free
                     </a>
+                    {paypal && (
+                      <p className="text-center text-[11px] text-ink-500">
+                        Pays via PayPal — card or PayPal balance
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <p className="mt-4 py-2 text-center text-xs text-ink-500">
-                    Set STRIPE_SECRET_KEY to enable checkout
+                    Set PAYPAL_CLIENT_ID + PAYPAL_CLIENT_SECRET to enable checkout
                   </p>
                 )}
               </div>
