@@ -1,4 +1,4 @@
-/** The Zombly mark: acid-green tile, bold Z, one bite taken out. */
+/** The Zombly mark: acid-green tile with a zombie bite out of the top, bold Z. */
 export function ZomblyMark({ size = 22 }: { size?: number }) {
   return (
     <svg
@@ -8,10 +8,14 @@ export function ZomblyMark({ size = 22 }: { size?: number }) {
       aria-hidden="true"
       className="shrink-0"
     >
-      <rect width="64" height="64" rx="14" fill="#A3E635" />
-      <path d="M17 15 H47 V24 L30.5 40 H47 V49 H17 V40 L33.5 24 H17 Z" fill="#0A0E14" />
-      <circle cx="47" cy="15" r="7" fill="#A3E635" />
-      <circle cx="41" cy="13" r="2.4" fill="#A3E635" />
+      <mask id="zombly-bite">
+        <rect width="64" height="64" rx="14" fill="#fff" />
+        <circle cx="40" cy="-1" r="8" fill="#000" />
+        <circle cx="52" cy="1" r="9" fill="#000" />
+        <circle cx="62" cy="8" r="8" fill="#000" />
+      </mask>
+      <rect width="64" height="64" rx="14" fill="#A3E635" mask="url(#zombly-bite)" />
+      <path d="M15 19 H45 V28 L28.5 44 H45 V53 H15 V44 L31.5 28 H15 Z" fill="#0A0E14" />
     </svg>
   )
 }
