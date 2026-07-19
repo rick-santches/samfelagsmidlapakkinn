@@ -16,10 +16,26 @@ const FLAG_LABEL: Record<string, string> = {
   FORGOTTEN_ANNUAL: 'Renewal ahead',
 }
 
-export default async function DashboardPage() {
+const RANGES = [
+  { key: '3m', label: '3m', months: 3 },
+  { key: '6m', label: '6m', months: 6 },
+  { key: '12m', label: '12m', months: 12 },
+  { key: 'all', label: 'All', months: null },
+] as const
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { range?: string }
+}) {
   const { org } = await requireOrg()
   const data = await getDashboardData(org.id, org.plan)
   const locked = data.killListPreview.some((f) => f.locked)
+
+  const range = RANGES.find((r) => r.key === searchParams.range) ?? RANGES[3]
+  const spendSeries = range.months
+    ? data.spendSeries.slice(-range.months)
+    : data.spendSeries
 
   if (!data.hasData) {
     return (
@@ -82,12 +98,29 @@ export default async function DashboardPage() {
       {/* Charts */}
       <div className="mt-4 grid gap-4 lg:grid-cols-5">
         <div className="rounded-xl border border-ink-800 bg-ink-900 p-6 lg:col-span-3">
-          <h2 className="text-sm font-semibold text-ink-200">
-            Recurring spend over time
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-ink-200">
+              Recurring spend over time
+            </h2>
+            <div className="flex gap-1">
+              {RANGES.map((r) => (
+                <Link
+                  key={r.key}
+                  href={r.key === 'all' ? '/dashboard' : `/dashboard?range=${r.key}`}
+                  className={`rounded-md px-2 py-0.5 text-xs font-medium transition ${
+                    r.key === range.key
+                      ? 'bg-savings/15 text-savings'
+                      : 'text-ink-500 hover:text-ink-300'
+                  }`}
+                >
+                  {r.label}
+                </Link>
+              ))}
+            </div>
+          </div>
           <div className="mt-4">
-            {data.spendSeries.length > 1 ? (
-              <SpendOverTimeChart data={data.spendSeries} />
+            {spendSeries.length > 1 ? (
+              <SpendOverTimeChart data={spendSeries} />
             ) : (
               <p className="py-16 text-center text-sm text-ink-500">
                 Not enough history for a trend yet.

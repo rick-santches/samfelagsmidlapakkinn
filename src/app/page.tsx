@@ -217,10 +217,13 @@ export default function LandingPage() {
           <span className="text-sm font-bold text-savings">Zombly</span>
         </div>
         <p className="text-xs text-ink-600">
-          Built for US small businesses · Flat pricing, no %-of-savings games ·{' '}
-          <Link href="/signin" className="text-ink-400 hover:text-savings">
-            Sign in
-          </Link>
+          Built for US small businesses · Flat pricing, no %-of-savings games
+        </p>
+        <p className="mt-2 space-x-3 text-xs">
+          <Link href="/guides" className="text-ink-400 hover:text-savings">Cancellation guides</Link>
+          <Link href="/terms" className="text-ink-400 hover:text-savings">Terms</Link>
+          <Link href="/privacy" className="text-ink-400 hover:text-savings">Privacy</Link>
+          <Link href="/signin" className="text-ink-400 hover:text-savings">Sign in</Link>
         </p>
       </footer>
 

@@ -5,7 +5,7 @@ import { paypalConfigured } from '@/lib/paypal'
 import { PLANS } from '@/lib/plans'
 import { requireOrg } from '@/lib/session'
 import { stripeConfigured } from '@/lib/stripe'
-import { updateAlertPrefs } from './actions'
+import { addMember, removeMember, updateAlertPrefs } from './actions'
 
 export default async function SettingsPage({
   searchParams,
@@ -21,6 +21,13 @@ export default async function SettingsPage({
   const membership = await prisma.membership.findFirst({
     where: { userId: user.id, orgId: org.id },
   })
+  const members = await prisma.membership.findMany({
+    where: { orgId: org.id },
+    include: { user: { select: { email: true, name: true } } },
+    orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
+  })
+  const seats = PLANS[org.plan].seats
+  const canAddSeat = role === 'OWNER' && members.length < seats
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -66,6 +73,7 @@ export default async function SettingsPage({
         </dl>
       </section>
 
+      {role === 'OWNER' && (
       <section id="billing" className="mt-6 scroll-mt-8">
         <h2 className="text-lg font-semibold">Billing</h2>
         <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-ink-400">
@@ -151,6 +159,73 @@ export default async function SettingsPage({
             )
           })}
         </div>
+      </section>
+      )}
+
+      <section className="mt-8 rounded-xl border border-ink-800 bg-ink-900 p-6">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold text-ink-200">Team</h2>
+          <p className="text-xs text-ink-400">
+            {members.length} of {seats} seat{seats === 1 ? '' : 's'} used
+          </p>
+        </div>
+        <ul className="mt-4 divide-y divide-ink-800">
+          {members.map((member) => (
+            <li key={member.id} className="flex items-center gap-3 py-2.5 text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">
+                  {member.user.name ?? member.user.email}
+                </p>
+                <p className="truncate text-xs text-ink-400">{member.user.email}</p>
+              </div>
+              <span className="rounded-full bg-ink-800 px-2 py-0.5 text-xs text-ink-300">
+                {member.role}
+              </span>
+              {role === 'OWNER' && member.role === 'MEMBER' && (
+                <form action={removeMember}>
+                  <input type="hidden" name="membershipId" value={member.id} />
+                  <button
+                    type="submit"
+                    className="rounded-md border border-ink-700 px-2 py-1 text-xs text-ink-400 transition hover:border-flame hover:text-flame"
+                  >
+                    Remove
+                  </button>
+                </form>
+              )}
+            </li>
+          ))}
+        </ul>
+        {canAddSeat ? (
+          <form action={addMember} className="mt-4 flex gap-2">
+            <input
+              type="email"
+              name="email"
+              required
+              placeholder="teammate@company.com"
+              className="flex-1 rounded-lg border border-ink-700 bg-ink-950 px-3 py-2 text-sm text-ink-100 placeholder:text-ink-500 focus:border-savings focus:outline-none"
+            />
+            <button
+              type="submit"
+              className="rounded-lg bg-savings px-4 py-2 text-sm font-semibold text-ink-950 transition hover:bg-savings-glow"
+            >
+              Add teammate
+            </button>
+          </form>
+        ) : role === 'OWNER' ? (
+          <p className="mt-4 text-xs text-ink-500">
+            All seats are used.{' '}
+            {org.plan !== 'TEAM' && (
+              <a href="#billing" className="text-savings hover:underline">
+                Upgrade to Team for 5 seats.
+              </a>
+            )}
+          </p>
+        ) : null}
+        <p className="mt-3 text-xs text-ink-500">
+          Teammates sign in at {process.env.NEXT_PUBLIC_APP_URL ?? 'the app'}/signin
+          with their email — a magic link does the rest. They see everything
+          except billing and team management.
+        </p>
       </section>
 
       <section className="mt-8 rounded-xl border border-ink-800 bg-ink-900 p-6">

@@ -10,7 +10,8 @@ export interface CancellationInfo {
   note: string
 }
 
-const KNOWN: Record<string, CancellationInfo> = {
+// Exported so the public /guides pages can be generated from the same data.
+export const KNOWN_CANCELLATIONS: Record<string, CancellationInfo> = {
   Slack: { url: 'https://slack.com/help/articles/204457437', difficulty: 'easy', note: 'Workspace admin → Billing → change plan.' },
   Zoom: { url: 'https://zoom.us/billing', difficulty: 'easy', note: 'Admin → Account Management → Billing → cancel plan.' },
   'Google Meet': { url: 'https://admin.google.com', difficulty: 'medium', note: 'Bundled with Workspace — downgrade the Workspace SKU instead.' },
@@ -46,7 +47,7 @@ const DEFAULT_NOTE: CancellationInfo = {
 }
 
 export function cancellationInfo(merchantName: string): CancellationInfo {
-  const known = KNOWN[merchantName]
+  const known = KNOWN_CANCELLATIONS[merchantName]
   if (known) return known
   return {
     ...DEFAULT_NOTE,
