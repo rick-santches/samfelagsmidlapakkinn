@@ -17,6 +17,22 @@ const CADENCE_LABEL: Record<string, string> = {
 
 const STATUS_VALUES: SubscriptionStatus[] = ['ACTIVE', 'FLAGGED', 'CANCELED', 'IGNORED']
 
+// Normalize a subscription to an approximate monthly cost for the header total.
+// IRREGULAR is already a "/mo avg" figure; the precise per-charge normalization
+// lives in monthlyizedCents() (needs charge history the list doesn't load).
+function monthlyEquivCents(cadence: string, cents: number): number {
+  switch (cadence) {
+    case 'WEEKLY':
+      return Math.round(cents * 4.33)
+    case 'QUARTERLY':
+      return Math.round(cents / 3)
+    case 'ANNUAL':
+      return Math.round(cents / 12)
+    default:
+      return cents // MONTHLY, IRREGULAR
+  }
+}
+
 const SORT_ORDER: Record<string, Prisma.SubscriptionOrderByWithRelationInput> = {
   amount: { currentAmountCents: 'desc' },
   name: { merchantName: 'asc' },
@@ -63,6 +79,12 @@ export default async function SubscriptionsPage({
     .map((r) => r.category)
     .filter((c): c is string => c !== null)
 
+  // Monthly-equivalent spend across the currently-shown ACTIVE/FLAGGED rows —
+  // canceled/ignored aren't ongoing spend, so they're left out of the total.
+  const monthlyActiveCents = subscriptions
+    .filter((s) => s.status === 'ACTIVE' || s.status === 'FLAGGED')
+    .reduce((sum, s) => sum + monthlyEquivCents(s.cadence, s.currentAmountCents), 0)
+
   if (totalCount === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center text-center">
@@ -90,6 +112,12 @@ export default async function SubscriptionsPage({
             {subscriptions.length === totalCount
               ? `${totalCount} detected`
               : `${subscriptions.length} of ${totalCount}`}
+            {monthlyActiveCents > 0 && (
+              <span className="num">
+                {' · ≈ '}
+                <span className="text-ink-200">{formatMoney(monthlyActiveCents)}/mo</span> active
+              </span>
+            )}
           </p>
         </div>
         <SubscriptionFilters categories={categories} />
