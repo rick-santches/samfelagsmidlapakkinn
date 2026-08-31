@@ -1,16 +1,8 @@
 import Link from 'next/link'
 import { signOut } from '@/auth'
+import { DashboardNav } from '@/components/dashboard-nav'
 import { ZomblyMark } from '@/components/zombly-mark'
 import { requireOrg } from '@/lib/session'
-
-const NAV = [
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/dashboard/subscriptions', label: 'Subscriptions' },
-  { href: '/dashboard/review', label: 'Review' },
-  { href: '/dashboard/killlist', label: 'Kill List' },
-  { href: '/dashboard/sources', label: 'Sources' },
-  { href: '/dashboard/settings', label: 'Settings' },
-] as const
 
 async function signOutAction(): Promise<void> {
   'use server'
@@ -34,17 +26,7 @@ export default async function DashboardLayout({
         </Link>
         <p className="mt-1 truncate px-2 text-xs text-ink-400">{org.name}</p>
 
-        <nav className="mt-8 flex flex-1 flex-col gap-1">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-md px-2 py-1.5 text-sm text-ink-200 transition hover:bg-ink-800 hover:text-ink-100"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <DashboardNav />
 
         <div className="border-t border-ink-800 pt-4">
           <p className="truncate px-2 text-xs text-ink-400">{user.email}</p>
