@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AuthError } from 'next-auth'
 import { auth, signIn } from '@/auth'
@@ -45,7 +46,21 @@ export default async function SignInPage({
     Boolean(process.env.RESEND_API_KEY) || process.env.NODE_ENV !== 'production'
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6">
+    <main className="relative flex min-h-screen items-center justify-center px-6">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[420px]"
+        style={{
+          background:
+            'radial-gradient(50% 50% at 50% 0%, rgba(163,230,53,0.10), rgba(10,14,20,0) 70%)',
+        }}
+      />
+      <Link
+        href="/"
+        className="absolute left-6 top-6 text-sm text-ink-500 transition hover:text-ink-300"
+      >
+        ← Home
+      </Link>
       <div className="w-full max-w-sm">
         <div className="mb-3 flex items-center justify-center gap-2.5">
           <ZomblyMark size={26} />
@@ -68,8 +83,9 @@ export default async function SignInPage({
           </p>
         )}
 
+        <div className="mt-8 rounded-2xl border border-ink-800 bg-ink-900/70 p-6 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.6)]">
         {magicLinkEnabled && (
-          <form action={signInWithEmail} className="mt-8 space-y-3">
+          <form action={signInWithEmail} className="space-y-3">
             <input
               type="email"
               name="email"
@@ -89,7 +105,7 @@ export default async function SignInPage({
         {googleEnabled && (
           <>
             {magicLinkEnabled && <Divider />}
-            <form action={signInWithGoogle} className={magicLinkEnabled ? '' : 'mt-8'}>
+            <form action={signInWithGoogle}>
               <button
                 type="submit"
                 className="w-full rounded-lg border border-ink-700 px-4 py-3 font-semibold text-ink-200 transition hover:border-ink-500"
@@ -103,10 +119,7 @@ export default async function SignInPage({
         {ownerEnabled && (
           <>
             {(magicLinkEnabled || googleEnabled) && <Divider />}
-            <form
-              action={signInWithPassword}
-              className={magicLinkEnabled || googleEnabled ? 'space-y-3' : 'mt-8 space-y-3'}
-            >
+            <form action={signInWithPassword} className="space-y-3">
               <input
                 type="email"
                 name="email"
@@ -130,6 +143,12 @@ export default async function SignInPage({
             </form>
           </>
         )}
+        </div>
+
+        <p className="mt-5 text-center text-xs text-ink-500">
+          Your financial data is scoped to your org and never sold. CSV-only works
+          too — no bank credentials required.
+        </p>
       </div>
     </main>
   )
