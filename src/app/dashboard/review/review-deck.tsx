@@ -90,6 +90,11 @@ export function ReviewDeck({ flags }: { flags: ReviewFlag[] }) {
     )
   }
 
+  const progress = queue.length ? index / queue.length : 0
+  const remainingAtStake = queue
+    .slice(index)
+    .reduce((sum, f) => sum + f.estimatedAnnualSavingsCents, 0)
+
   return (
     <div className="mx-auto flex h-full max-w-xl flex-col justify-center">
       <div className="flex items-center justify-between text-sm text-ink-400">
@@ -100,6 +105,17 @@ export function ReviewDeck({ flags }: { flags: ReviewFlag[] }) {
           <p className="num text-savings">{formatMoney(killedCents)}/yr killed</p>
         )}
       </div>
+      <div className="mt-2 h-1 rounded-full bg-ink-800">
+        <div
+          className="h-1 rounded-full bg-savings transition-all"
+          style={{ width: `${progress * 100}%` }}
+        />
+      </div>
+      {remainingAtStake > 0 && (
+        <p className="num mt-1 text-xs text-ink-500">
+          {formatMoney(remainingAtStake)}/yr still under review
+        </p>
+      )}
 
       <div className="mt-3 rounded-2xl border border-ink-800 bg-ink-900 p-8 shadow-xl">
         <div className="flex items-center gap-4">
