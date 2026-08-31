@@ -8,6 +8,7 @@ import { formatMoney } from '@/lib/money'
 import { planSpec } from '@/lib/plans'
 import { requireOrg } from '@/lib/session'
 import { ExportButtons } from './export-buttons'
+import { ShareWin } from './share-win'
 
 const FLAG_LABEL: Record<string, string> = {
   DUPLICATE: 'Duplicate plan',
@@ -94,6 +95,9 @@ export default async function KillListPage() {
           whole
           className="mt-1 block text-5xl font-bold tracking-tight text-savings"
         />
+        <div className="mt-4 print:hidden">
+          <ShareWin cents={totalCents} count={kills.length} />
+        </div>
       </div>
 
       <ul className="mt-6 space-y-4">
