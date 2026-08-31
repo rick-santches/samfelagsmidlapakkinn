@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { ZomblyMark } from '@/components/zombly-mark'
+import { ScannerDemo } from '@/components/scanner-demo'
+import { RevealController } from '@/components/reveal-controller'
 
 const STEPS = [
   {
@@ -81,43 +83,59 @@ const FAQS = [
 
 export default function LandingPage() {
   return (
-    <main className="mx-auto max-w-4xl px-6">
-      <section className="flex min-h-[70vh] flex-col items-center justify-center pt-20 text-center">
-        <div className="mb-5 flex flex-col items-center gap-3">
-          <ZomblyMark size={76} />
-          <p className="text-base font-bold uppercase tracking-[0.25em] text-savings">
-            Zombly
-          </p>
+    <main className="mx-auto max-w-5xl px-6">
+      <section className="relative pb-12 pt-16">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px]"
+          style={{
+            background:
+              'radial-gradient(55% 55% at 50% 0%, rgba(163,230,53,0.10), rgba(10,14,20,0) 72%)',
+          }}
+        />
+        <div className="grid items-center gap-10 lg:grid-cols-2">
+          <div>
+            <div className="mb-5 flex items-center gap-2.5">
+              <ZomblyMark size={40} />
+              <span className="text-sm font-bold uppercase tracking-[0.25em] text-savings">
+                Zombly
+              </span>
+            </div>
+            <h1 className="text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl">
+              Kill your <span className="text-savings">zombie</span> subscriptions.
+            </h1>
+            <p className="mt-5 max-w-md text-lg text-ink-300">
+              Your business is paying for software nobody uses. Zombly reads your
+              statements, finds every recurring charge, and shows exactly what to
+              cancel — with receipts.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/signin"
+                className="rounded-lg bg-savings px-6 py-3 font-semibold text-ink-950 transition hover:bg-savings-glow"
+              >
+                Start your free audit
+              </Link>
+              <Link
+                href="#pricing"
+                className="rounded-lg border border-ink-700 px-6 py-3 font-semibold text-ink-200 transition hover:border-ink-500"
+              >
+                See pricing
+              </Link>
+            </div>
+            <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-500">
+              <span>No card for the free audit</span>
+              <span className="text-ink-700">·</span>
+              <span>CSV or bank connect</span>
+              <span className="text-ink-700">·</span>
+              <span>Flat pricing, no %-of-savings</span>
+            </div>
+          </div>
+          <ScannerDemo />
         </div>
-        <h1 className="max-w-2xl text-4xl font-bold tracking-tight sm:text-6xl">
-          Kill your zombie subscriptions.
-        </h1>
-        <p className="mt-6 max-w-xl text-lg text-ink-300">
-          Your business is paying for software nobody uses. Zombly reads your
-          statements, finds every recurring charge, and shows you exactly what
-          to cancel — with receipts.
-        </p>
-        <div className="mt-10 flex gap-4">
-          <Link
-            href="/signin"
-            className="rounded-lg bg-savings px-6 py-3 font-semibold text-ink-950 transition hover:bg-savings-glow"
-          >
-            Start your free audit
-          </Link>
-          <Link
-            href="/dashboard"
-            className="rounded-lg border border-ink-700 px-6 py-3 font-semibold text-ink-200 transition hover:border-ink-500"
-          >
-            Dashboard
-          </Link>
-        </div>
-        <p className="mt-4 text-xs text-ink-500">
-          Free audit shows what&apos;s leaking. Plans from $19/mo unlock the
-          Kill List.
-        </p>
       </section>
 
-      <section className="grid gap-6 pb-8 sm:grid-cols-3">
+      <section className="reveal grid gap-6 pb-8 sm:grid-cols-3">
         {STEPS.map((step, i) => (
           <div key={step.title} className="rounded-xl border border-ink-800 bg-ink-900 p-6">
             <p className="num text-sm font-bold text-savings">0{i + 1}</p>
@@ -127,10 +145,10 @@ export default function LandingPage() {
         ))}
       </section>
 
-      <section className="pb-8">
+      <section className="reveal pb-8">
         <div className="rounded-xl border border-ink-800 bg-ink-900 p-6">
           <p className="text-sm font-semibold text-ink-200">
-            The kind of thing it says about your spending:
+            It doesn&apos;t just list charges — it judges them:
           </p>
           <ul className="mt-4 space-y-3">
             {FLAG_EXAMPLES.map(([badge, quote]) => (
@@ -146,7 +164,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="scroll-mt-8 pb-8 pt-12">
+      <section id="pricing" className="reveal scroll-mt-8 pb-8 pt-12">
         <h2 className="text-center text-3xl font-bold tracking-tight">
           Flat pricing. No <span className="text-savings">%-of-savings</span> games.
         </h2>
@@ -194,7 +212,7 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="scroll-mt-8 pb-16 pt-12">
+      <section id="faq" className="reveal scroll-mt-8 pb-16 pt-12">
         <h2 className="text-center text-3xl font-bold tracking-tight">
           Questions, answered.
         </h2>
@@ -259,6 +277,8 @@ export default function LandingPage() {
           }),
         }}
       />
+
+      <RevealController />
     </main>
   )
 }
