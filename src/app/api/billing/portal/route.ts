@@ -6,6 +6,11 @@ export async function GET(): Promise<NextResponse> {
   const ctx = await requireOrgApi()
   if ('error' in ctx) return ctx.error
 
+  // Billing management is owner-only, matching the cancel routes.
+  if (ctx.role !== 'OWNER') {
+    return NextResponse.json({ error: 'Only the owner can manage billing' }, { status: 403 })
+  }
+
   const client = stripe()
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
   if (!client || !ctx.org.stripeCustomerId) {

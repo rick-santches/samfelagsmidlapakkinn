@@ -234,10 +234,19 @@ export async function runPipelineForOrg(
     (sum, s) => sum + monthlyizedCents(s),
     0,
   )
-  const totalFlaggedSavingsCents = openFlags.reduce(
-    (sum, f) => sum + f.estimatedAnnualSavingsCents,
-    0,
-  )
+  // Savings are realized per subscription, not per flag: a sub carrying two
+  // flags (e.g. ZOMBIE + FORGOTTEN_ANNUAL) is the same dollars, saved once when
+  // you cancel it. Take the largest per-subscription estimate, then sum — so the
+  // headline "you could save $X" isn't inflated by overlapping flags.
+  const maxSavingsBySub = new Map<string, number>()
+  for (const f of openFlags) {
+    const prev = maxSavingsBySub.get(f.subscriptionId) ?? 0
+    if (f.estimatedAnnualSavingsCents > prev) {
+      maxSavingsBySub.set(f.subscriptionId, f.estimatedAnnualSavingsCents)
+    }
+  }
+  let totalFlaggedSavingsCents = 0
+  for (const cents of maxSavingsBySub.values()) totalFlaggedSavingsCents += cents
 
   const snapshot: Prisma.InputJsonValue = {
     generatedAt: now.toISOString(),

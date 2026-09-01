@@ -119,6 +119,11 @@ function findOverlaps(
     byCategory.set(sub.category, list)
   }
 
+  // A subscription overlaps its whole category, not just one pair — so flag each
+  // one at most once. Without this, in a category of 3+ tools the cheapest is
+  // flagged once per pair it appears in (e.g. A vs B and A vs C both target A),
+  // producing duplicate flags and inflated savings for the same subscription.
+  const flaggedTargets = new Set<string>()
   for (const group of byCategory.values()) {
     for (let i = 0; i < group.length; i++) {
       for (let j = i + 1; j < group.length; j++) {
@@ -137,6 +142,8 @@ function findOverlaps(
             : monthlyizedCents(a) <= monthlyizedCents(b)
               ? a
               : b
+        if (flaggedTargets.has(target.key)) continue
+        flaggedTargets.add(target.key)
         const keeper = target === a ? b : a
         const savings = annualizedCents(target)
         flags.push({

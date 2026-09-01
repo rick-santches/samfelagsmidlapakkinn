@@ -69,6 +69,20 @@ describe('OVERLAP', () => {
     const flags = flagsOf([...monthly('NETFLIX.COM', 1549, 8), ...monthly('SPOTIFY USA', 1099, 8)])
     expect(flags.filter((f) => f.type === 'OVERLAP')).toHaveLength(0)
   })
+
+  it('flags each tool at most once when 3+ share a category', () => {
+    // Three video tools: expect the two cheaper flagged once each (keep the
+    // priciest), and NO subscription flagged twice by the pairwise loop.
+    const flags = flagsOf([
+      ...monthly('ZOOM.US 888', 1599, 8),
+      ...monthly('GOOGLE *MEET PREMIUM', 1200, 8),
+      ...monthly('CISCO WEBEX', 1000, 8),
+    ])
+    const overlap = flags.filter((f) => f.type === 'OVERLAP')
+    expect(overlap).toHaveLength(2)
+    const keys = overlap.map((f) => f.subscriptionKey)
+    expect(new Set(keys).size).toBe(2) // no subscription flagged more than once
+  })
 })
 
 describe('ZOMBIE', () => {

@@ -5,6 +5,7 @@ import { MerchantLogo } from '@/components/merchant-logo'
 import { categoryLabel } from '@/lib/category-label'
 import { prisma } from '@/lib/db'
 import { formatMoney } from '@/lib/money'
+import { planSpec } from '@/lib/plans'
 import { requireOrg } from '@/lib/session'
 
 const CADENCE_LABEL: Record<string, string> = {
@@ -42,6 +43,11 @@ export default async function SubscriptionDetailPage({
     },
   })
   if (!sub) notFound()
+
+  // Flag explanations + savings are paid content. Match the redaction the
+  // dashboard/kill-list/review already enforce so this detail page can't be a
+  // side door to it on the FREE plan.
+  const flagsUnlocked = planSpec(org.plan).flagsUnlocked
 
   const charges = sub.charges.map((c) => c.transaction)
   const totalPaidCents = charges.reduce((sum, t) => sum + t.amountCents, 0)
@@ -88,11 +94,23 @@ export default async function SubscriptionDetailPage({
                 <span className="rounded-full bg-flame/15 px-2 py-0.5 text-xs font-medium text-flame">
                   {FLAG_LABEL[flag.type] ?? flag.type} · {flag.status}
                 </span>
-                <span className="num text-sm font-semibold text-savings">
-                  {formatMoney(flag.estimatedAnnualSavingsCents)}/yr
-                </span>
+                {flagsUnlocked && (
+                  <span className="num text-sm font-semibold text-savings">
+                    {formatMoney(flag.estimatedAnnualSavingsCents)}/yr
+                  </span>
+                )}
               </div>
-              <p className="mt-2 text-sm text-ink-300">{flag.explanation}</p>
+              {flagsUnlocked ? (
+                <p className="mt-2 text-sm text-ink-300">{flag.explanation}</p>
+              ) : (
+                <p className="mt-2 text-sm text-ink-400">
+                  Zombly flagged this one.{' '}
+                  <Link href="/#pricing" className="font-medium text-savings hover:underline">
+                    Upgrade
+                  </Link>{' '}
+                  to see why — and how much you&apos;d save.
+                </p>
+              )}
             </div>
           ))}
         </div>

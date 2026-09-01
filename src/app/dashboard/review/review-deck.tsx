@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, useTransition } from 'react'
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { MerchantLogo } from '@/components/merchant-logo'
 import { formatMoney } from '@/lib/money'
 import { dismissFlag, killFlag, remindFlag } from './actions'
@@ -45,16 +45,25 @@ export function ReviewDeck({ flags }: { flags: ReviewFlag[] }) {
   const current = queue[index]
   const done = index >= queue.length
 
+  // Synchronous guard: useTransition's `pending` updates asynchronously, so a
+  // rapid double-press could enter act() twice before it flips — skipping a flag
+  // and double-counting its savings. A ref bails instantly.
+  const acting = useRef(false)
   const act = useCallback(
     (action: (id: string) => Promise<void>, savings = 0): void => {
-      if (!current || pending) return
+      if (!current || acting.current) return
+      acting.current = true
       startTransition(async () => {
-        await action(current.id)
-        if (savings > 0) setKilledCents((c) => c + savings)
-        setIndex((i) => i + 1)
+        try {
+          await action(current.id)
+          if (savings > 0) setKilledCents((c) => c + savings)
+          setIndex((i) => i + 1)
+        } finally {
+          acting.current = false
+        }
       })
     },
-    [current, pending, startTransition],
+    [current, startTransition],
   )
 
   // Tinder-style keyboard triage: 1/← keep, 2 remind, 3/→ kill.
