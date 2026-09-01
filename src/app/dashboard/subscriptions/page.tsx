@@ -81,8 +81,10 @@ export default async function SubscriptionsPage({
 
   // Monthly-equivalent spend across the currently-shown ACTIVE/FLAGGED rows —
   // canceled/ignored aren't ongoing spend, so they're left out of the total.
+  // IRREGULAR is excluded too: its single charge can't be reliably normalized to
+  // a month without the charge history, and guessing would overcount.
   const monthlyActiveCents = subscriptions
-    .filter((s) => s.status === 'ACTIVE' || s.status === 'FLAGGED')
+    .filter((s) => (s.status === 'ACTIVE' || s.status === 'FLAGGED') && s.cadence !== 'IRREGULAR')
     .reduce((sum, s) => sum + monthlyEquivCents(s.cadence, s.currentAmountCents), 0)
 
   if (totalCount === 0) {
