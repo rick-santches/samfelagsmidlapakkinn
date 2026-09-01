@@ -33,3 +33,11 @@ body {
     transition: none;
   }
 }
+/* When printing, reveal-gated sections must be visible even if JS never ran the
+   scroll observer — otherwise the page prints with blank sections. */
+@media print {
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
