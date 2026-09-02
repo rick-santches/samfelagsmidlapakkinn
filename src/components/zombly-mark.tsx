@@ -1,0 +1,41 @@
+/**
+ * The Zombly mark (from the chosen brand image): a statement being
+ * swiped away — stepped receipt, folded flap, slash, pointing hand —
+ * in brand green line art. `tile` adds the dark rounded background.
+ */
+export function ZomblyMark({ size = 22, tile = false }: { size?: number; tile?: boolean }) {
+  const bg = tile ? '#0F141C' : 'transparent'
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 64 64"
+      aria-hidden="true"
+      className="shrink-0"
+    >
+      {tile && <rect width="64" height="64" rx="14" fill="#0F141C" />}
+      <path
+        d="M27 9 H36 a3 3 0 0 1 3 3 V39 a3 3 0 0 1 -3 3 H19 a3 3 0 0 1 -3 -3 V20 a3 3 0 0 1 3 -3 h5 v-5 a3 3 0 0 1 3 -3 Z"
+        fill={bg}
+        stroke="#A3E635"
+        strokeWidth="3.2"
+        strokeLinejoin="round"
+      />
+      <path d="M39 12.5 l7 5.5 -7 2.5 Z" fill="#A3E635" />
+      <line x1="51" y1="7" x2="11" y2="47" stroke="#A3E635" strokeWidth="3.2" strokeLinecap="round" />
+      <g transform="rotate(-12 36 40)">
+        <path
+          d="M31 24.5 a3.25 3.25 0 0 1 6.5 0 L37.5 35.5
+             q2.3 -2 4.6 -0.2 q2.3 -1.8 4.4 0.4 q2.5 1.3 2.5 4.2 v3.1
+             q0 7.5 -7.5 7.5 h-4.2 q-5.4 0 -7.4 -4.7 l-3.3 -7.2
+             q-1.1 -2.4 1.1 -3.3 q2.1 -0.85 3.3 1.15 l0.5 0.85 Z"
+          fill={tile ? '#0F141C' : '#0A0E14'}
+          stroke="#A3E635"
+          strokeWidth="3.2"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+      </g>
+    </svg>
+  )
+}
